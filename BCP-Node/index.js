@@ -7,7 +7,7 @@ const session = require('express-session');
 
 const app = express();
 app.use(bodyParser.json());
-const port = 3001;
+const port = 3002;
 
 app.use(session({
   secret: 'my-secret-key',
