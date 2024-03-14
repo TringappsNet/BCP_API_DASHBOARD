@@ -4,6 +4,11 @@ const bodyParser = require('body-parser');
 const crypto = require('crypto');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
+const nodemailer = require('nodemailer');
+const { google } = require('googleapis');
+const OAuth2Client = google.auth.OAuth2;
+const readline = require('readline');
+const credentials = require('./credentials.json');
 
 
 const app = express();
@@ -27,6 +32,36 @@ const config = {
 console.log("Starting server...");
 const pool = mysql.createPool(config);
 
+const oauth2Client = new OAuth2Client(credentials.client_id, credentials.client_secret);
+
+// Generate a random token and store it in the database
+async function generateResetToken(userId) {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiration = new Date(Date.now() + 3600000).toISOString().substring(0, 19); // token expires in 1 hour
+  const insertQuery = 'INSERT INTO ResetTokens (UserID, Token, Expiration) VALUES (?, ?, ?)';
+  const [result] = await pool.query(insertQuery, [userId, token, expiration]);
+  return token;
+}
+
+// Check if the token provided by the user is valid and has not expired
+async function isValidToken(token) {
+  const selectQuery = 'SELECT * FROM ResetTokens WHERE Token = ?';
+  const [rows] = await pool.query(selectQuery, [token]);
+  if (rows.length === 0) {
+    return false;
+  }
+  const [row] = rows;
+  if (Date.now() > row.Expiration) {
+    return false;
+  }
+  return row.UserID;
+}
+
+// Remove the token from the database
+function removeToken(token) {
+  const deleteQuery = 'DELETE FROM ResetTokens WHERE Token = ?';
+  pool.query(deleteQuery, [token]);
+}
 
 
 
@@ -81,7 +116,11 @@ app.post('/register', bodyParser.json(), async (req, res) => {
 
 app.post('/login', async (req, res) => {
   const { userName, password } = req.body;
-
+  const errorResponse = (statusCode, message) => ({
+    statusCode,
+    message
+  });
+  
   if (!userName || !password) {
     return res.status(400).send('Username and password are required!');
   }
@@ -99,7 +138,7 @@ if (rows.length > 0) {
     req.session.userName = user.UserName;
     res.send('LoggedIn');
   } else {
-    res.send('Not Valid User!');
+    res.status(401).send('Invalid Password!');
   }
 } else {
   res.status(400).send('User Not Found!');
@@ -118,6 +157,119 @@ if (rows.length > 0) {
 
   });
 
+
+  app.post('/reset-password', async (req, res) => {
+    const { userName, oldPassword, newPassword } = req.body;
+  
+    if (!userName || !oldPassword || !newPassword) {
+      return res.status(400).json({ message: 'UserName, old password, and new password are required' });
+    }
+  
+    try {
+      // Check if the user exists in the database
+      const [rows] = await pool.query('SELECT * FROM Login WHERE UserName = ?', [userName]);
+      if (rows.length === 0) {
+        return res.status(400).json({ message: 'User not found' });
+      }
+      const user = rows[0];
+  
+      // Validate the old password
+      const isValidPassword = await bcrypt.compare(oldPassword, user.Password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: 'Invalid old password' });
+      }
+  
+      // Hash the new password
+      const salt = await bcrypt.genSalt();
+      const newPasswordHash = await bcrypt.hash(newPassword, salt);
+  
+      // Update the user's password in the database using the user's ID
+      const updateQuery = 'UPDATE Login SET Password = ?, Salt = ? WHERE ID = ?';
+      await pool.query(updateQuery, [newPasswordHash, salt, user.ID]);
+  
+      console.log("Password reset successfully!");
+      res.status(200).json({ message: 'Password reset successfully' });
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      res.status(500).json({ message: 'Error resetting password' });
+    }
+  });
+  
+
+
+  app.post('/forgot-password', async (req, res) => {
+    const { email } = req.body;
+  
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+  
+    try {
+      const [rows] = await pool.query('SELECT * FROM Login WHERE Email = ?', [email]);
+      if (rows.length === 0) {
+        return res.status(400).json({ message: 'Email not found' });
+      }
+      const user = rows[0];
+      const token = generateResetToken(user.ID);
+  
+      // Generate an OAuth2 URL for the user to authorize your app
+      const scopes = ['https://www.googleapis.com/auth/gmail.compose'];
+      const url = oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: scopes,
+      });
+  
+      console.log('Authorize this app by visiting this url:', url);
+  
+      // Prompt the user to visit the OAuth2 URL and enter the code from the page
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+      const code = await new Promise((resolve) => {
+        rl.question('Enter the code from that page here: ', (answer) => {
+          rl.close();
+          resolve(answer);
+        });
+      });
+  
+      // Use the code to get an access token and refresh token from the OAuth2 client
+      const { tokens } = await oauth2Client.getToken(code);
+      oauth2Client.setCredentials(tokens);
+  
+      // Create a Nodemailer transporter using the access token and refresh token
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          type: 'OAuth2',
+          user: credentials.client_email,
+          clientId: credentials.client_id,
+          clientSecret: credentials.client_secret,
+          refreshToken: tokens.refresh_token,
+          accessToken: tokens.access_token,
+        },
+      });
+  
+      // Send the email
+      const mailOptions = {
+        from: credentials.client_email,
+        to: email,
+        subject: 'Reset your password',
+        text: `Click this link to reset your password: http://your-app.com/reset-password?token=${token}`
+      };
+      const info = await transporter.sendMail(mailOptions);
+      console.log('Email sent:', info.messageId);
+  
+      // Save the refresh token in the database
+      const updateQuery = 'UPDATE Login SET ResetToken = ? WHERE ID = ?';
+      await pool.query(updateQuery, [tokens.refresh_token, user.ID]);
+  
+      res.status(200).json({ message: 'Forgot password email sent' });
+    } catch (error) {
+      console.error("Error sending forgot password email:", error);
+      res.status(500).json({ message: 'Error sending forgot password email' });
+    }
+  });
 
 // Start the server
 app.listen(port, () => {
