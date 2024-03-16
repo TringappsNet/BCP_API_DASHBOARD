@@ -8,7 +8,7 @@ const nodemailer = require('nodemailer');
 const { google } = require('googleapis');
 const OAuth2Client = google.auth.OAuth2;
 const readline = require('readline');
-const credentials = require('./credentials.json');
+const https = require('https');
 
 
 const app = express();
@@ -32,7 +32,9 @@ const config = {
 console.log("Starting server...");
 const pool = mysql.createPool(config);
 
-const oauth2Client = new OAuth2Client(credentials.client_id, credentials.client_secret);
+const oauth2Client = new OAuth2Client("435371461403-t06fchktq9am58b2ol74rna40gqghon8.apps.googleusercontent.com",
+"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",
+"http://localhost:3001/callback");
 
 // Generate a random token and store it in the database
 async function generateResetToken(userId) {
@@ -143,12 +145,12 @@ if (rows.length > 0) {
 } else {
   res.status(400).send('User Not Found!');
 }
-  } catch (error) {
-    console.error("Error logging in user:", error);
+    } catch (error) {
+      console.error("Error logging in user:", error);
     res.status(500).json({ message: 'Error logging in user' });
   }
 });
-
+  
 
   app.post('/logout', (req, res) => {
     // Destroy the session
@@ -221,54 +223,79 @@ if (rows.length > 0) {
   
       console.log('Authorize this app by visiting this url:', url);
   
-      // Prompt the user to visit the OAuth2 URL and enter the code from the page
-      const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-      });
-      const code = await new Promise((resolve) => {
-        rl.question('Enter the code from that page here: ', (answer) => {
-          rl.close();
-          resolve(answer);
+      // Make an HTTP request to the OAuth2 authorization URL
+      const request = https.request(url, (oauthRes) => {
+        const chunks = [];
+  
+        oauthRes.on('data', (chunk) => {
+          chunks.push(chunk);
         });
+  
+        oauthRes.on('end', async () => {
+          const body = Buffer.concat(chunks);
+          console.log('Response body:', body.toString());
+          // Extract the authorization code from the HTTP response
+          const match = body.toString().match(/<input type="hidden" name="code" value="(\w+)"/);
+          if (!match) {
+            console.error('Error extracting authorization code from HTTP response');
+            res.status(500).json({ message: 'Error sending forgot password email' });
+            return;
+          }
+          const code = match[1];
+  
+          // Use thecode to get an access token and refresh token from the OAuth2 client
+          const { tokens } = await oauth2Client.getToken(code);
+          oauth2Client.setCredentials(tokens);
+  
+          console.log('Access token:', tokens.access_token);
+          console.log('Refresh token:', tokens.refresh_token);
+  
+          // Create a Nodemailer transporter using the access token and refresh token
+          const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+              type: 'OAuth2',
+              user: "johnson.selvakumar@tringapps.net",
+              clientId: "435371461403-t06fchktq9am58b2ol74rna40gqghon8.apps.googleusercontent.com",
+              clientSecret: "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",
+              refreshToken: tokens.refresh_token,
+              accessToken: tokens.access_token,
+            },
+          });
+  
+          // Send the email
+          const mailOptions = {
+            from: "johnson.selvakumar@tringapps.net",
+            to: email,
+            subject: 'Reset your password',
+            text: `Click this link to reset your password: http://your-app.com/reset-password?token=${token}`
+          };
+          const info = await transporter.sendMail(mailOptions);
+          console.log('Email sent:', info.messageId);
+  
+          // Save the refresh token in the database
+          const updateQuery = 'UPDATE Login SET ResetToken = ? WHERE ID = ?';
+          await pool.query(updateQuery, [tokens.refresh_token, user.ID]);
+  
+          res.status(200).json({ message: 'Forgot password email sent' });
+        });
+      }).on('error', (error) => {
+        console.error('Error making HTTP request to OAuth2 authorization URL:', error);
+        res.status(500).json({ message: 'Error sending forgot passwordemail' });
       });
   
-      // Use the code to get an access token and refresh token from the OAuth2 client
-      const { tokens } = await oauth2Client.getToken(code);
-      oauth2Client.setCredentials(tokens);
-  
-      // Create a Nodemailer transporter using the access token and refresh token
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          type: 'OAuth2',
-          user: credentials.client_email,
-          clientId: credentials.client_id,
-          clientSecret: credentials.client_secret,
-          refreshToken: tokens.refresh_token,
-          accessToken: tokens.access_token,
-        },
-      });
-  
-      // Send the email
-      const mailOptions = {
-        from: credentials.client_email,
-        to: email,
-        subject: 'Reset your password',
-        text: `Click this link to reset your password: http://your-app.com/reset-password?token=${token}`
-      };
-      const info = await transporter.sendMail(mailOptions);
-      console.log('Email sent:', info.messageId);
-  
-      // Save the refresh token in the database
-      const updateQuery = 'UPDATE Login SET ResetToken = ? WHERE ID = ?';
-      await pool.query(updateQuery, [tokens.refresh_token, user.ID]);
-  
-      res.status(200).json({ message: 'Forgot password email sent' });
     } catch (error) {
       console.error("Error sending forgot password email:", error);
       res.status(500).json({ message: 'Error sending forgot password email' });
     }
+  });
+
+
+  app.get('/callback', async (req, res) => {
+    const code = req.query.code;
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+    res.send(`Authorization code: ${code}`);
   });
 
 // Start the server
