@@ -16,6 +16,7 @@
     "express-session": "^1.18.0",
     "googleapis": "^134.0.0",
     "mysql2": "^3.9.2",
-    "nodemailer": "^6.9.12"
+    "nodemailer": "^6.9.12",
+    "xlsx": "^0.18.5"
   }
 }

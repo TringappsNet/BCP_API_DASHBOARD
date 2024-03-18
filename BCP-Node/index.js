@@ -45,27 +45,6 @@ async function generateResetToken(userId) {
   return token;
 }
 
-// Check if the token provided by the user is valid and has not expired
-async function isValidToken(token) {
-  const selectQuery = 'SELECT * FROM ResetTokens WHERE Token = ?';
-  const [rows] = await pool.query(selectQuery, [token]);
-  if (rows.length === 0) {
-    return false;
-  }
-  const [row] = rows;
-  if (Date.now() > row.Expiration) {
-    return false;
-  }
-  return row.UserID;
-}
-
-// Remove the token from the database
-function removeToken(token) {
-  const deleteQuery = 'DELETE FROM ResetTokens WHERE Token = ?';
-  pool.query(deleteQuery, [token]);
-}
-
-
 
 app.post('/register', bodyParser.json(), async (req, res) => {
   const { userName, password, email, organization, phoneNo } = req.body;
@@ -298,6 +277,67 @@ if (rows.length > 0) {
     res.send(`Authorization code: ${code}`);
   });
 
+  
+
+  app.post('/bulk-upload', bodyParser.json(), async (req, res) => {
+    const { data } = req.body;
+  
+    if (!data || !Array.isArray(data) || data.length === 0 || typeof data[0] !== 'object') {
+      return res.status(400).json({ message: 'Invalid JSON data' });
+    }
+  
+    const tableName = 'ExcelData';
+  
+    try {
+      // Get the keys from the JSON data
+      const keys = Object.keys(data[0]);
+  
+      // Get the existing columns in the table
+      const [columns] = await pool.query(`DESCRIBE \`${tableName}\``);
+      const tableColumns = columns.map(column => column.Field);
+  
+      // Find the common columns between JSON keys and table columns
+      const updateColumns = keys.filter(key => tableColumns.includes(key));
+  
+      const dateFormats = ['yyyy-MM-dd', 'MM/dd/yyyy', 'dd-MM-yyyy'];
+const createTableQuery = `CREATE TABLE IF NOT EXISTS \`${tableName}\` (${
+  keys.map(
+    key => `\`${key.replace(/`/g, '``')}\` ${
+      typeof data[0][key] === 'number'
+        ? 'DOUBLE'
+        : dateFormats.some(format => data[0][key].match(new RegExp(`^\\d{4}-\\d{2}-\\d{2}$`)))
+        ? 'DATE'
+        : typeof data[0][key] === 'boolean'
+        ? 'BOOLEAN'
+        : typeof data[0][key] === 'object' && Array.isArray(data[0][key])
+        ? 'JSON'
+        : 'VARCHAR(255)'
+    }`
+  ).join(', ')
+});`;
+      console.log('Generated SQL query for table creation:', createTableQuery);
+  
+      await pool.query(createTableQuery);
+  
+      // Insert or update the JSON data into the table
+      const placeholders = updateColumns.map(() => '?').join(', ');
+      const insertQuery = `INSERT INTO \`${tableName}\` (${updateColumns.map(key => `\`${key.replace(/`/g, '``')}\``).join(', ')}) VALUES (${placeholders}) ON DUPLICATE KEY UPDATE ${updateColumns.map(key => `\`${key.replace(/`/g, '``')}\` = VALUES(\`${key.replace(/`/g, '``')}\`)`).join(', ')};`;
+      const values = data.map(item => updateColumns.map(key => item[key]));
+  
+      for (let i = 0; i < values.length; i++) {
+        await pool.query(insertQuery, values[i]);
+      }
+  
+      console.log(`JSON data inserted or updated into table ${tableName}`);
+      res.status(200).json({ message: 'JSON data inserted or updated successfully' });
+    } catch (error) {
+      console.error(`Error inserting or updating JSON data into table ${tableName}:`, error);
+      res.status(500).json({ message: 'Error inserting or updating JSON data' });
+    }
+  });
+
+
+  
 // Start the server
 app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
