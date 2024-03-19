@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('./pool');
 const bodyParser = require('body-parser');
+const columnMap = require('./bulk-upload')
 
 router.get('/', async (req, res) => {
     try {
