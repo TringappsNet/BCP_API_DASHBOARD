@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../pool');
+const pool = require('./pool');
+const bodyParser = require('body-parser');
 
-
-router.post('/', bodyParser.json(), async (req, res) => {
+router.post('/bulk-upload', bodyParser.json(), async (req, res) => {
 const { data } = req.body;
     const { userName, organization } = req.session;
   
