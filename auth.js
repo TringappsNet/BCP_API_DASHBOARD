@@ -4,23 +4,32 @@ const bcrypt = require('bcrypt');
 const pool = require('./pool');
 const bodyParser = require('body-parser');
 
+router.get('/', (req, res) => {
+    res.send('Hello World');
+  });
+
 router.post('/register', bodyParser.json(), async (req, res) => {
     const { userName, password, email, organization, phoneNo } = req.body;
 
     if (!userName || !password || !email || !organization || !phoneNo) {
-      return res.status(400).json({ message: 'Username, password, email, organization, and phone number are required' });
-    }
+        return res.status(400).json({ errors: {
+            userName: 'Username is required',
+            password: 'Password is required',
+            email: 'Email is required',
+            organization: 'Organization is required',
+            phoneNo: 'Mobile number is required'
+          }});    }
   
     if (userName.length < 3) {
-      return res.status(400).json({ message: 'Username must be at least 3 characters long' });
+        return res.status(400).json({ errors: { userName: 'Username must be at least 3 characters long' } });
     }
   
     if (organization.length < 3) {
-      return res.status(400).json({ message: 'Organization must be at least 3 characters long' });
+        return res.status(400).json({ errors: { organization: 'Organization must be at least 3 characters long' } });
     }
   
     if (!/^[\w-]+(.[\w-]+)*@([\w-]+.)+[a-zA-Z]{2,7}$/.test(email)) {
-      return res.status(400).json({ message: 'Email is not a valid email address' });
+        return res.status(400).json({ errors: { email: 'Email is not a valid email address' } });
     }
   
     try {
@@ -28,14 +37,14 @@ router.post('/register', bodyParser.json(), async (req, res) => {
       const selectUserQuery = 'SELECT * FROM Login WHERE UserName = ?';
       const [rows] = await pool.query(selectUserQuery, [userName]);
       if (rows.length > 0) {
-        return res.status(400).json({ message: 'Username already exists' });
+        return res.status(400).json({ errors: { userName: 'Username already exists' } });
       }
   
       // Check if the email already exists in the database
       const selectEmailQuery = 'SELECT * FROM Login WHERE Email = ?';
       const [rows2] = await pool.query(selectEmailQuery, [email]);
       if (rows2.length > 0) {
-        return res.status(400).json({ message: 'Email already exists' });
+        return res.status(400).json({ errors: { email: 'Email already exists' } });
       }
   
       const salt = await bcrypt.genSalt();
@@ -62,7 +71,7 @@ router.post('/login', async (req, res) => {
     });
   
     if (!userName || !password) {
-      return res.status(400).send('Username and password are required!');
+        return res.status(400).send('Username and password are required!');
     }
   
     try {
@@ -79,11 +88,10 @@ router.post('/login', async (req, res) => {
           req.session.organization = user.Organization; // Add this line
           res.send('LoggedIn');
         } else {
-          res.status(401).send('Invalid Password!');
         }
       } else {
-        res.status(400).send('User Not Found!');
-      }
+        res.status(400).json({ message: 'User Not Found!' });
+    }
     } catch (error) {
       console.error("Error logging in user:", error);
       res.status(500).json({ message: 'Error logging in user' });
