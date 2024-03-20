@@ -71,7 +71,7 @@ router.post('/login', async (req, res) => {
     });
   
     if (!userName || !password) {
-        return res.status(400).send('Username and password are required!');
+      return res.status(400).send('Username and password are required!');
     }
   
     try {
@@ -85,13 +85,28 @@ router.post('/login', async (req, res) => {
           // Create a session for the user
           req.session.userId = user.ID;
           req.session.userName = user.UserName;
-          req.session.organization = user.Organization; // Add this line
-          res.send('LoggedIn');
-        } else {
+          req.session.organization = user.Organization;
+  
+          // Set the session ID as a cookie in the response headers
+          res.cookie('sessionId', req.sessionID, {
+            httpOnly: true,
+            secure: false, // Set to true if using HTTPS
+            maxAge: 24 * 60 * 60 * 1000 // expires after 24 hours
+          });
+  
+          res.status(200).json({
+            message: 'Logged In',
+            user: {
+              username: req.session.userName,
+              organization: req.session.organization
+            }
+          });
+         } else {
+          res.status(401).json({ message: 'Invalid Password!'});
         }
       } else {
-        res.status(400).json({ message: 'User Not Found!' });
-    }
+        res.status(400).json({ message: 'User Not Found!'});
+      }
     } catch (error) {
       console.error("Error logging in user:", error);
       res.status(500).json({ message: 'Error logging in user' });
