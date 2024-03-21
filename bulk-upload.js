@@ -33,36 +33,37 @@ const columnMap = {
     "Quarter": "Quarter"
   };
 
+  router.post('/', bodyParser.json(), async (req, res) => {
+    const { userData, data } = req.body; // Destructure userData and data from req.body
+    const { username, organization } = userData; // Extract username and organization from userData
+  
+    if (!Array.isArray(data) || !data.every(item => typeof item === 'object')) {
+      return res.status(400).json({ message: 'Invalid JSON body format' });
+    }
+  
+    try {
+      const connection = await pool.getConnection();
+      await connection.beginTransaction();
+  
+      const insertPromises = data.map(row => {
+        const values = [organization, username, ...Object.values(row).map(value => typeof value === 'string' ? value.replace(/ /g, '') : value)];
+        const columns = ['Organization', 'UserName', ...Object.keys(row).map(key => columnMap[key])];
 
-router.post('/', bodyParser.json(), async (req, res) => {
-  const { data } = req.body;
-  const { userName, organization } = req.session;
-//
-  if (!Array.isArray(data) || !data.every(item => typeof item === 'object')) {
-    return res.status(400).json({ message: 'Invalid JSON body format' });
-  }
+        console.log('Inserting row:', values); 
 
-  try {
-    const connection = await pool.getConnection();
-    await connection.beginTransaction();
-
-    const insertPromises = data.map(row => {
-      const values = [organization, userName, ...Object.values(row).map(value => typeof value === 'string' ? value.replace(/ /g, '') : value)];
-      const columns = ['Organization', 'UserName', ...Object.keys(row).map(key => columnMap[key])];
-
-      const query = 'INSERT INTO exceldata (' + columns.join(', ') + ') VALUES (?)';
-      return connection.query(query, [values]);
-    });
-
-    await Promise.all(insertPromises);
-    await connection.commit();
-    connection.release();
-
-    res.status(200).json({ message: 'Data uploaded successfully' });
-  } catch (error) {
-    console.error('Error inserting data:', error);
-    res.status(500).json({ message: 'Error inserting data' });
-  }
-});
-
+        const query1 = 'INSERT INTO exceldata (' + columns.join(', ') + ') VALUES (?)';
+        return connection.query(query1, [values]);
+      });
+  
+      await Promise.all(insertPromises);
+      await connection.commit();
+      connection.release();
+  
+      res.status(200).json({ message: 'Data uploaded successfully' });
+    } catch (error) {
+      console.error('Error inserting data:', error);
+      res.status(500).json({ message: 'Error inserting data' });
+    }
+  });
+  
 module.exports = router, columnMap;
