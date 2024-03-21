@@ -4,11 +4,8 @@ const bcrypt = require('bcrypt');
 const pool = require('./pool');
 const bodyParser = require('body-parser');
 
-router.get('/', (req, res) => {
-    res.send('Hello World');
-  });
 
-router.post('/register', bodyParser.json(), async (req, res) => {
+router.post('/', bodyParser.json(), async (req, res) => {
     const { userName, password, email, organization, phoneNo } = req.body;
 
     if (!userName || !password || !email || !organization || !phoneNo) {
@@ -62,65 +59,4 @@ router.post('/register', bodyParser.json(), async (req, res) => {
     }
 });
 
-
-router.post('/login', async (req, res) => {
-  const { userName, password } = req.body;
-  const errorResponse = (statusCode, message) => ({
-    statusCode,
-    message
-  });
-
-  if (!userName || !password) {
-    return res.status(400).json({ error: 'Username and password are required!' });
-  }
-
-  try {
-    const [rows] = await pool.query('SELECT * FROM Login WHERE UserName = ?', [userName]);
-    if (rows.length > 0) {
-      const user = rows[0];
-      console.log('Hashed password from database:', user.Password);
-      const hashedPassword = await bcrypt.hash(password, user.Salt);
-      console.log('Hashed password from entered password:', hashedPassword);
-      if (hashedPassword === user.Password) {
-        // Create a session for the user
-        req.session.userId = user.ID;
-        req.session.userName = user.UserName;
-        req.session.organization = user.Organization;
-
-        // Set the session ID as a cookie in the response headers
-        res.cookie('sessionId', req.sessionID, {
-          httpOnly: true,
-          secure: false, // Set to true if using HTTPS
-          maxAge: 24 * 60 * 60 * 1000 // expires after 24 hours
-        });
-
-        res.status(200).json({
-          message: 'Logged In',
-          username: req.session.userName,
-          organization: req.session.organization
-        });
-        
-       } else {
-        res.status(401).json({ error: 'Invalid Password!' });
-      }
-    } else {
-      res.status(400).json({ error: 'User Not Found!' });
-    }
-  } catch (error) {
-    console.error("Error logging in user:", error);
-    res.status(500).json({ error: 'Error logging in user' });
-  }
-});
-
-
-router.post('/logout', (req, res) => {
- // Destroy the session
- req.session.destroy();
- res.status(200).json({ message: 'Logged Out' });
-
-});
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
 module.exports = router;
