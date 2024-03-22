@@ -6,7 +6,7 @@ const columnMap = require('./bulk-upload');
 
 router.get('/', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM exceldata');
+        const [rows] = await pool.query('SELECT * FROM Portfolio_Companies_format');
         const data = rows.map(row => {
           const newRow = {};
           Object.keys(row).forEach(key => {

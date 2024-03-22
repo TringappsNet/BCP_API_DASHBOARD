@@ -25,6 +25,8 @@ app.use('/data', require('./data'));
 app.use('/bulk-upload', require('./bulk-upload'));
 app.use('/UserData', require('./UserData'));
 app.use('/update', require('./update'));
+app.use('/delete', require('./delete'));
+
 
 
 

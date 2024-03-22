@@ -119,8 +119,5 @@ router.post('/logout', (req, res) => {
  res.status(200).json({ message: 'Logged Out' });
 
 });
-<<<<<<< Updated upstream
-=======
 
->>>>>>> Stashed changes
 module.exports = router;

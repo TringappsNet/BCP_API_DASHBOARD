@@ -33,7 +33,7 @@ router.post('/', async (req, res) => {
           res.cookie('sessionId', req.sessionID, {
             httpOnly: true,
             secure: false, // Set to true if using HTTPS
-            maxAge: 24 * 60 * 60 * 1000 // expires after 24 hours
+            maxAge: 10 * 60 * 1000 // 10 minutes
           });
   
           res.status(200).json({
