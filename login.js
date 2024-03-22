@@ -50,7 +50,7 @@ router.post('/', async (req, res) => {
       }
     } catch (error) {
       console.error("Error logging in user:", error);
-      res.status(500).json({ error: 'Error logging in user' });
+      res.status(500).json({ message: 'Error logging in user' });
     }
   });
   

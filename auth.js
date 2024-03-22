@@ -105,10 +105,10 @@ router.post('/login', async (req, res) => {
         });
         
        } else {
-        res.status(401).json({ error: 'Invalid Password!' });
+        res.status(401).json({ message: 'Invalid Password!' });
       }
     } else {
-      res.status(400).json({ error: 'User Not Found!' });
+      res.status(400).json({ message: 'User Not Found!' });
     }
   } catch (error) {
     console.error("Error logging in user:", error);
