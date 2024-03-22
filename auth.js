@@ -8,6 +8,10 @@ router.get('/', (req, res) => {
     res.send('Hello World');
   });
 
+router.get('/sample', (req, res) => {
+    res.send('sample ');
+  });
+
 router.post('/register', bodyParser.json(), async (req, res) => {
     const { userName, password, email, organization, phoneNo } = req.body;
 
@@ -119,5 +123,5 @@ router.post('/logout', (req, res) => {
  res.status(200).json({ message: 'Logged Out' });
 
 });
-
 module.exports = router;
+
