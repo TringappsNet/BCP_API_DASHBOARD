@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('./pool');
 const bodyParser = require('body-parser');
+const moment = require('moment');
 
 const columnMap = {
     "Month/Year": "MonthYear",
@@ -51,7 +52,7 @@ const columnMap = {
 
         console.log('Inserting row:', values); 
 
-        const query1 = 'INSERT INTO exceldata (' + columns.join(', ') + ') VALUES (?)';
+        const query1 = 'INSERT INTO Portfolio_Companies_format (' + columns.join(', ') + ') VALUES (?)';
         return connection.query(query1, [values]);
       });
   
