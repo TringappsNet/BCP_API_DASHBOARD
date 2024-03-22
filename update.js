@@ -3,8 +3,6 @@ const router = express.Router();
 const pool = require('./pool');
 const bodyParser = require('body-parser');
 const columnMap = require('./bulk-upload');
-
-// Import the updatedRow middleware
 const updatedRow = require('./middlewares/updated-row');
 
 router.use(bodyParser.json());
@@ -19,7 +17,11 @@ router.post('/', updatedRow, async (req, res) => {
   const placeholders = columnNames.map(() => '?').join(', ');
 
   try {
-    // Replace exceldata with the actual table name in your database
+    // Convert the Quarter value to a number
+    if (editedRow.Quarter) {
+      editedRow.Quarter = parseInt(editedRow.Quarter.replace('Q', ''), 10);
+    }
+
     const query = `UPDATE Portfolio_Companies_format SET ${columnNames.map((column) => `${column} = ?`).join(', ')} WHERE id = ?`;
     const [result] = await pool.query(query, [...Object.values(editedRow), editedRow.id]);
 
@@ -28,7 +30,7 @@ router.post('/', updatedRow, async (req, res) => {
       const updatedData = await fetchUpdatedData(data.map(row => (row.id === editedRow.id ? editedRow : row)));
       setData(updatedData);
       setEditedRow(null);
-      res.status(200).json({ message: 'Row updated successfully', updatedData });
+     res.status(200).json({ message: 'Row updated successfully', updatedData });
     } else {
       res.status(200).json({ message: 'No changes made to the row' });
     }
