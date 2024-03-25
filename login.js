@@ -22,13 +22,9 @@ router.post('/', async (req, res) => {
             res.status(401).json({ message: result.message });
         }
     } catch (error) {
-<<<<<<< Updated upstream
       console.error("Error logging in user:", error);
       res.status(500).json({ message: 'Error logging in user' });
-=======
-        console.error("Error logging in user:", error);
-        res.status(500).json({ error: 'Error logging in user' });
->>>>>>> Stashed changes
+
     }
 });
 
