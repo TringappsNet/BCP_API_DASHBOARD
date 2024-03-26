@@ -47,6 +47,7 @@ router.post('/', async (req, res) => {
         return {
           isDuplicate: isDuplicate,
           rowId: result[0][0].id || null,
+
         };
       });
   
