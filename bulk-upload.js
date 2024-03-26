@@ -19,7 +19,7 @@ const columnMap = require('./column-map');
       await connection.beginTransaction();
   
       const insertPromises = data.map(row => {
-        const values = [organization, username, ...Object.values(row).map(value => typeof value === 'string' ? value.replace(/ /g, '') : value)];
+          const values = [organization, username, ...Object.values(row).map(value => typeof value === 'string' ? value.replace(/ /g, '') : value)];
         const columns = ['Organization', 'UserName', ...Object.keys(row).map(key => columnMap[key])];
 
         console.log('Inserting row:', values); 
