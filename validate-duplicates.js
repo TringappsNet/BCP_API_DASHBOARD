@@ -1,54 +1,61 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('./pool');
-const bodyParser = require('body-parser');
-const moment = require('moment');
+const columnMap = require('./column-map');
 
-const checkForDuplicates = async (organization, username, monthYear) => {
-    const connection = await pool.getConnection();
-    const query = 'SELECT COUNT(*) as count FROM Portfolio_Companies_format WHERE Organization = ? AND UserName = ? AND MonthYear = ?';
-    const formattedMonthYear = moment(monthYear).format('YYYY-MM-DD HH:mm:ss');
-    const [rows] = await connection.query(query, [organization, username, formattedMonthYear]);
-    connection.release();
-    return rows[0].count > 0;
-  };
 
-// Add a parseMonthYear function to parse the date from the request
-const parseMonthYear = row => {
-  const dateString = row['Month/Year'];
-  const dateParts = dateString.split('-');
-  return {
-    year: parseInt(dateParts[0]),
-    month: parseInt(dateParts[1])
-  };
-};
+router.post('/', async (req, res) => {
+    const { userData, data } = req.body;
+    const { username, organization } = userData;
+  
+    if (!Array.isArray(data) || !data.every(item => typeof item === 'object')) {
+      return res.status(400).json({ message: 'Invalid JSON body format' });
+    }
+  
+    console.log('userData:', userData);
+    console.log('data :', data);
+  
+    try {
+      const connection = await pool.getConnection();
+      const duplicatePromises = data.map(async row => {
+        const keys = Object.keys(row);
+        console.log('keys :', keys);
+  
+        const mappedKeys = ['Organization', 'UserName', ...Object.keys(row).map(key => columnMap[key])];
+        console.log('mappedKeys :', mappedKeys);
+  
+        const mappedValues = [organization, username, ...Object.values(row)
+            .map((value) => (keys[mappedKeys.indexOf('Month/Year')] === 'Month/Year')
+              ? value.replace(/ /g, '') : value
+            )
+          ];        
+          
+        console.log('mappedValues :', mappedValues);
+  
+        const monthYearValue = mappedValues[mappedKeys.indexOf('MonthYear')];
+  
+        const query = 'SELECT COUNT(*) as count FROM Portfolio_Companies_format WHERE UserName = ? AND Organization = ? AND MonthYear = ?';
+        const result = await connection.query(query, [username, organization, monthYearValue]);
 
-// Update the handler function to insert the data
-router.post('/', bodyParser.json(), async (req, res) => {
-  const { userData, data } = req.body;
-  const { username, organization } = userData;
+        console.log(result);
 
-  if (!Array.isArray(data) || !data.every(item => typeof item === 'object')) {
-    return res.status(400).json({ message: 'Invalid JSON body format' });
-  }
+        console.log(`Month/Year: ${monthYearValue}`);
 
-  const parsedData = data.map(row => {
-    const parsedMonthYear = parseMonthYear(row);
-    return {
-      ...row,
-      MonthYear: moment({ year: parsedMonthYear.year, month: parsedMonthYear.month, day: 15 }),
-      Organization: organization,
-      UserName: username,
-    };
+        const isDuplicate = result[0][0].count > 0;
+        console.log(`isDuplicate ${isDuplicate}`);
+        return {
+          id: row.ID,
+          isDuplicate: isDuplicate,
+        };
+      });
+  
+      const results = await Promise.all(duplicatePromises);
+      res.status(200).json({ data: results });
+      connection.release();
+    } catch (error) {
+      console.error('Error validating duplicates:', error);
+      res.status(500).json({ message: 'Error validating duplicates' });
+    }
   });
-
-  const duplicatePromises = parsedData.map(async row => {
-    const isDuplicate = await checkForDuplicates(organization, username, row.MonthYear);
-    return { ...row, isDuplicate };
-  });
-
-  const validatedData = await Promise.all(duplicatePromises);
-  res.status(200).json(validatedData);
-});
-
-module.exports = router;
+  
+  module.exports = router;
