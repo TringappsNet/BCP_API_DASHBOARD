@@ -15,6 +15,8 @@ const config = {
     database: 'BCP_Dashboard'
   };
 
+  
+
 // const config = {
 //     host: '14.194.141.107',
 //     user: 'root',
