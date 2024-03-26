@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
 const pool = require('./pool');
+require('dotenv').config(); 
+
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
 
 
 router.post('/', async (req, res) => {
@@ -58,11 +62,11 @@ async function sendResetLink(email, resetToken) {
       port: 587,
       secure: false,
       auth: {
-        user: 'sandhya.k@tringapps.net',
-        pass: 'lmzc dfhi zfqc wjab'
+        user: SMTP_USER,
+        pass: SMTP_PASS
       }
     });
-    const resetLink = `http://localhost:3002/reset-password?token=${resetToken}`;
+    const resetLink = `http://192.168.1.129:3002/reset-password?token=${resetToken}`;
     const mailOptions = {
       from: 'sender@example.com',
       to: email,
