@@ -7,8 +7,18 @@ const { google } = require('googleapis');
 const readline = require('readline');
 const { promisify } = require('util');
 const https = require('https');
-const bodyParser = require('body-parser');
+const crypto = require("crypto");
 
+
+const generateResetToken = function (userId) {
+  return crypto.randomBytes(32).toString("hex");
+};
+
+const oauth2Client = new google.auth.OAuth2(
+  '435371461403-t06fchktq9am58b2ol74rna40gqghon8.apps.googleusercontent.com',
+  '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',
+  'http://localhost:3001/callback'
+);
 
 router.post('/', async (req, res) => {
     const { email } = req.body;
@@ -18,7 +28,7 @@ router.post('/', async (req, res) => {
     }
   
     try {
-      const [rows] = await pool.query('SELECT * FROM Login WHERE Email = ?', [email]);
+      const [rows] = await pool.query('SELECT * FROM users WHERE Email = ?', [email]);
       if (rows.length === 0) {
         return res.status(400).json({ message: 'Email not found' });
       }
@@ -104,9 +114,33 @@ router.post('/', async (req, res) => {
 
   router.get('/callback', async (req, res) => {
     const code = req.query.code;
-    const { tokens } = await oauth2Client.getToken(code);
-    oauth2Client.setCredentials(tokens);
-    res.send(`Authorization code: ${code}`);
+  
+    if (!code) {
+      return res.status(400).json({ message: 'Authorization code not provided' });
+    }
+  
+    try {
+      const { tokens } = await oauth2Client.getToken(code);
+  
+      await saveTokens({
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        email
+      });      
+      oauth2Client.setCredentials(tokens);
+  
+      res.redirect('/success');
+    } catch (error) {
+      console.error('Error when retrieving access token', error);
+      res.status(500).json({ message: 'Error when retrieving access token' });
+    }
   });
-
+  
+  // Redirect to the `/success` route or display a success message after the user resets the password
+  // Add a new route to handle the password reset
+  router.get('/success', (req, res) => {
+    res.json({ message: 'Password reset successful' });
+  });
+  
+  module.exports = router;
 module.exports = router;
