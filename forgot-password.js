@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
 const pool = require('./pool');
+
 router.post('/', async (req, res) => {
   const { email } = req.body; // Assuming frontend sends email in request body
   try {
