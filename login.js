@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const pool = require('./pool');
 const bodyParser = require('body-parser');
+
 router.post('/', async (req, res) => {
     const { userName, password } = req.body;
     const errorResponse = (statusCode, message) => ({
@@ -12,6 +13,7 @@ router.post('/', async (req, res) => {
     if (!userName || !password) {
       return res.status(400).json({ error: 'Username and password are required!' });
     }
+
     try {
       const [rows] = await pool.query('SELECT * FROM users WHERE UserName = ?', [userName]);
       if (rows.length > 0) {
@@ -24,17 +26,20 @@ router.post('/', async (req, res) => {
           req.session.userId = user.ID;
           req.session.userName = user.UserName;
           req.session.organization = user.Organization;
+
           // Set the session ID as a cookie in the response headers
           res.cookie('sessionId', req.sessionID, {
             httpOnly: true,
             secure: false, // Set to true if using HTTPS
             maxAge: 10 * 60 * 1000 // 10 minutes
           });
+
           res.status(200).json({
             message: 'Logged In',
             username: req.session.userName,
             organization: req.session.organization
           });
+
          } else {
           res.status(401).json({ message: 'Invalid Password!'});
         }
@@ -46,4 +51,5 @@ router.post('/', async (req, res) => {
       res.status(500).json({ message: 'Error logging in user' });
     }
   });
+
 module.exports = router;

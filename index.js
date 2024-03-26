@@ -7,6 +7,7 @@ const pool = require('./pool');
 const app = express();
 const port = 3001;
 
+
 app.use(bodyParser.json());
 app.use(cors());
 app.use(session({
@@ -32,6 +33,8 @@ app.use('/bulk-upload', require('./bulk-upload'));
 app.use('/UserData', require('./UserData'));
 app.use('/update', require('./update'));
 app.use('/delete', require('./delete'));
+app.use('/validate-duplicates', require('./validate-duplicates'));
+
 
 // Start the server
 app.listen(port, () => {
