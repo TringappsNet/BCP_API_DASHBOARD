@@ -3,17 +3,6 @@ const router = express.Router();
 const nodemailer = require('nodemailer');
 const pool = require('./pool');
 
-
-const generateResetToken = function (userId) {
-  return crypto.randomBytes(32).toString("hex");
-};
-
-const oauth2Client = new google.auth.OAuth2(
-  '435371461403-t06fchktq9am58b2ol74rna40gqghon8.apps.googleusercontent.com',
-  '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',
-  'http://localhost:3001/callback'
-);
-
 router.post('/', async (req, res) => {
   const { email } = req.body; // Assuming frontend sends email in request body
 
@@ -54,7 +43,6 @@ async function updateResetToken(resetToken, userId) {
     try {
         await pool.query('UPDATE users SET resetToken = ? WHERE UserID = ?', [resetToken, userId]);
         console.log('Reset token updated in user table');
-
     } catch (error) {
         console.error('Error updating reset token in user table:', error);
         throw error;
@@ -89,6 +77,5 @@ async function sendResetLink(email, resetToken) {
         throw error;
     }
 }
-
 
 module.exports = router;
