@@ -3,40 +3,12 @@ const router = express.Router();
 const pool = require('./pool');
 const bodyParser = require('body-parser');
 const moment = require('moment');
+const columnMap = require('./column-map');
 
-const columnMap = {
-    "Month/Year": "MonthYear",
-    "Company Name": "CompanyName",
-    "Revenue Actual": "RevenueActual",
-    "Revenue Budget": "RevenueBudget",
-    "Gross Profit Actual": "GrossProfitActual",
-    "Gross Profit Budget": "GrossProfitBudget",
-    "SG & A Actual": "SGAActual",
-    "SG & A Budget": "SGABudget",
-    "EBITDA Actual": "EBITDAActual",
-    "EBITDA Budget": "EBITDABudget",
-    "CapEx Actual": "CapExActual",
-    "CapEx Budget": "CapExBudget",
-    "Fixed Assets (Net) Actual": "FixedAssetsNetActual",
-    "Fixed Assets (Net) Budget": "FixedAssetsNetBudget",
-    "Cash Actual": "CashActual",
-    "Cash Budget": "CashBudget",
-    "Total Debt Actual": "TotalDebtActual",
-    "Total Debt Budget": "TotalDebtBudget",
-    "Accounts Receivable Actual": "AccountsReceivableActual",
-    "Accounts Receivable Budget": "AccountsReceivableBudget",
-    "Accounts Payable Actual": "AccountsPayableActual",
-    "Accounts Payable Budget": "AccountsPayableBudget",
-    "Inventory Actual": "InventoryActual",
-    "Inventory Budget": "InventoryBudget",
-    "Employees Actual": "EmployeesActual",
-    "Employees Budget": "EmployeesBudget",
-    "Quarter": "Quarter"
-  };
 
   router.post('/', bodyParser.json(), async (req, res) => {
-    const { userData, data } = req.body; // Destructure userData and data from req.body
-    const { username, organization } = userData; // Extract username and organization from userData
+    const { userData, data } = req.body; 
+    const { username, organization } = userData;
   
     if (!Array.isArray(data) || !data.every(item => typeof item === 'object')) {
       return res.status(400).json({ message: 'Invalid JSON body format' });
@@ -67,4 +39,4 @@ const columnMap = {
     }
   });
   
-module.exports = router, columnMap;
+module.exports = router;
