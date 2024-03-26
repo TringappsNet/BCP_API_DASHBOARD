@@ -3,17 +3,14 @@ const router = express.Router();
 const nodemailer = require('nodemailer');
 const pool = require('./pool');
 
-
 const generateResetToken = function (userId) {
   return crypto.randomBytes(32).toString("hex");
 };
-
 const oauth2Client = new google.auth.OAuth2(
   '435371461403-t06fchktq9am58b2ol74rna40gqghon8.apps.googleusercontent.com',
   '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',
   'http://localhost:3001/callback'
 );
-
 router.post('/', async (req, res) => {
   const { email } = req.body; // Assuming frontend sends email in request body
 
@@ -26,6 +23,7 @@ router.post('/', async (req, res) => {
           console.log('Email not found in database');
           return res.status(404).json({ message: 'Email not found' });
       }
+
 
       console.log('User ID:', user[0].UserID); // Log user ID
       const resetTokenData = generateResetToken(user[0].UserID);
@@ -65,6 +63,7 @@ async function sendResetLink(email, resetToken) {
     try {
         const transporter = nodemailer.createTransport({
             host: 'smtp.gmail.com',
+
             port: 587, 
             secure: false,
             auth: {
@@ -89,6 +88,5 @@ async function sendResetLink(email, resetToken) {
         throw error;
     }
 }
-
 
 module.exports = router;
