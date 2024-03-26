@@ -3,6 +3,7 @@ const router = express.Router();
 const nodemailer = require('nodemailer');
 const pool = require('./pool');
 
+
 router.post('/', async (req, res) => {
   const { email } = req.body; // Assuming frontend sends email in request body
   try {
@@ -18,6 +19,7 @@ router.post('/', async (req, res) => {
     await updateResetToken(resetTokenData.token, resetTokenData.expiry, user[0].UserID); // Update the user table with the reset token and its expiry
     await sendResetLink(email, resetTokenData.token);
     return res.status(200).json({ message: 'Reset link sent successfully' });
+     
   } catch (error) {
     console.error('Error executing SQL query:', error);
     return res.status(500).json({ message: 'Internal server error' });
@@ -35,6 +37,7 @@ function generateResetToken(userId) {
   expiry.setHours(expiry.getHours() + 24); // Set expiry to 24 hours from now
   return { token, expiry, userId };
 }
+
 
 // Update reset token function
 async function updateResetToken(resetToken, expiry, userId) {
@@ -75,3 +78,6 @@ async function sendResetLink(email, resetToken) {
 }
 
 module.exports = router;
+
+
+
