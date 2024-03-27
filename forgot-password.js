@@ -7,7 +7,6 @@ require('dotenv').config();
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 
-
 router.post('/', async (req, res) => {
   const { email } = req.body; // Assuming frontend sends email in request body
   try {
@@ -30,7 +29,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Generate reset token function with expiry
 function generateResetToken(userId) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let token = userId.toString(); // Include user ID in the token
