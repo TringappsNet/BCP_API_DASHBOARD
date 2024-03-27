@@ -19,9 +19,11 @@ app.use(session({
 
 // Importing the forgot-password router
 const forgotPasswordRouter = require('./forgot-password');
+const sendInviteRouter = require('./send-invite');
 
 // Mounting the forgot-password router
 app.use('/forgot-password', forgotPasswordRouter);
+app.use('/send-invite', sendInviteRouter);
 
 // Your other routes
 app.use('/login', require('./login'));
