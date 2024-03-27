@@ -3,7 +3,6 @@ const router = express.Router();
 const pool = require('./pool');
 const columnMap = require('./column-map');
 
-
 router.post('/', async (req, res) => {
     const { userData, data } = req.body;
     const { username, organization } = userData;
@@ -43,9 +42,12 @@ router.post('/', async (req, res) => {
 
         const isDuplicate = result[0][0].count > 0;
         console.log(`isDuplicate ${isDuplicate}`);
+
+        
         return {
-          id: row.ID,
           isDuplicate: isDuplicate,
+          rowId: result[0][0].id || null,
+
         };
       });
   
@@ -58,4 +60,4 @@ router.post('/', async (req, res) => {
     }
   });
   
-  module.exports = router;
+module.exports = router;
