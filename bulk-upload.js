@@ -20,10 +20,10 @@ router.post('/', bodyParser.json(), async (req, res) => {
 
     const columns = ['Organization', 'UserName', ...Object.keys(newDatas[0]).map(key => columnMap[key])];
 
-    // Function to format datetime values
     const formatDateValue = (value, key) => {
       if (key === 'Month/Year') {
-        return moment(value, "YYYY-MM-DD' 'HH:mm:ss").format("YYYY-MM-DD' 'HH:mm:ss");
+        const dateParts = value.split('-');
+        return `${dateParts[0]}-${dateParts[1]}-01 00:00:00`;
       }
       return value;
     };
@@ -40,29 +40,41 @@ router.post('/', bodyParser.json(), async (req, res) => {
       await Promise.all(insertPromises);
     } else {
       // Update existing rows
-      const updatePromises = [];
-      for (let i = 1; i < overrideExisting.length; i++) {
-        const row = overrideExisting[i];
-        const rowId = overrideExisting[0].id; // Extract the ID from the first object
-        const values = [organization, username, ...Object.values(row).map((value, index) => formatDateValue(value, Object.keys(row)[index]))];
-        console.log('Updating existing record with ID:', rowId, row);
-        const updateQuery = `UPDATE Portfolio_Companies_format SET ${columns.slice(2).map((col, index) => `${col} = ?${index === columns.slice(2).length - 1 ? '' : ','}`).join(' ')} WHERE ID = ?`;
-        console.log('Update query:', updateQuery);
+        const updatePromises = [];
+        for (let i = 1; i < overrideExisting.length; i++) {
+          const row = overrideExisting[i];
+          const rowId = overrideExisting[0].id; // Extract the ID from the first object
+          const values = [organization, username, ...Object.values(row).map((value, index) => formatDateValue(value, Object.keys(row)[index]))];
+          console.log('Updating existing record with ID:', rowId, row);
+          const updateQuery = `UPDATE Portfolio_Companies_format SET ${columns.slice(2).map((col, index) => `${col} = ?${index === columns.slice(2).length - 1 ? '' : ','}`).join(' ')} WHERE ID = ?`;
+          console.log('Update query:', updateQuery);
 
-        const updatePromise = new Promise((resolve, reject) => {
-          connection.query(updateQuery, [...values.slice(2), rowId], (error, results) => {
-            if (error) {
-              reject(error);
-            } else {
-              resolve(results);
-            }
+          const updatePromise = new Promise((resolve, reject) => {
+            connection.query(updateQuery, [...values.slice(2), rowId], (error, results) => {
+              if (error) {
+                reject(error);
+              } else {
+                resolve(results);
+              }
+            });
+          
           });
-        });
-        updatePromises.push(updatePromise);
+          
 
-        console.log('Update values:', [...values.slice(2), rowId]);
-      }
-      await Promise.all(updatePromises);
+  updatePromises.push(updatePromise);
+
+  updatePromise.then(result => {
+    console.log('Update result:', result);
+    console.log('Status: updated');
+  }).catch(error => {
+    console.error('Update error:', error);
+    console.log('Status: error');
+  });
+
+  console.log('Update values:', [...values.slice(2), rowId]);
+}
+
+await Promise.all(updatePromises);
 
       // Insert new rows
       const insertPromises = newDatas.map(async row => {

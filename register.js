@@ -4,60 +4,48 @@ const bcrypt = require('bcrypt');
 const pool = require('./pool');
 const bodyParser = require('body-parser');
 
-
 router.post('/', bodyParser.json(), async (req, res) => {
-  const { userName, password, email, organization, phoneNo } = req.body;
+  const { username, firstName, lastName, phoneNo, password } = req.body;
 
-  if (!userName || !password || !email || !organization || !phoneNo) {
+  if (!username || !firstName || !lastName || !phoneNo || !password) {
     return res.status(400).json({ errors: {
-        userName: 'Username is required',
-        password: 'Password is required',
-        email: 'Email is required',
-        organization: 'Organization is required',
-        phoneNo: 'Mobile number is required'
+        username: 'Username is required',
+        firstName: 'First name is required',
+        lastName: 'Last name is required',
+        phoneNo: 'Phone number is required',
+        password: 'Password is required'
       }});
   }
 
-  if (userName.length < 3) {
-    return res.status(400).json({ errors: { userName: 'Username must be at least 3 characters long' } });
-  }
-
-  if (organization.length < 3) {
-    return res.status(400).json({ errors: { organization: 'Organization must be at least 3 characters long' } });
-  }
-
-  if (!/^[\w-]+(.[\w-]+)*@([\w-]+.)+[a-zA-Z]{2,7}$/.test(email)) {
-    return res.status(400).json({ errors: { email: 'Email is not a valid email address' } });
+  if (password.length < 6) {
+    return res.status(400).json({ errors: { password: 'Password must be at least 6 characters long' } });
   }
 
   try {
-    // Check if the username already exists in the database
-    const selectUserQuery = 'SELECT * FROM users WHERE UserName = ?';
-    const [rows] = await pool.query(selectUserQuery, [userName]);
-    if (rows.length > 0) {
-      return res.status(400).json({ errors: { userName: 'Username already exists' } });
-    }
-
-    // Check if the email already exists in the database
-    const selectEmailQuery = 'SELECT * FROM users WHERE Email = ?';
-    const [rows2] = await pool.query(selectEmailQuery, [email]);
-    if (rows2.length > 0) {
-      return res.status(400).json({ errors: { email: 'Email already exists' } });
-    }
-
+    // Generate salt
     const salt = await bcrypt.genSalt();
+    // Generate password hash with the generated salt
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // Insert user data into the Users table
-    const [result] = await pool.query('CALL RegisterUser(?, ?, ?, ?, ?, ?)', [userName, passwordHash, salt, email, organization, phoneNo]);
+    // Check if the user exists
+    const selectUserQuery = 'SELECT * FROM users WHERE UserName = ?';
+    const [userRows] = await pool.query(selectUserQuery, [username]);
+    
+    if (userRows.length === 0) {
+      return res.status(404).json({ errors: { username: 'User not found' } });
+    }
 
-    console.log("User registered successfully!");
+    // Call the stored procedure to update or insert user data, including the salt
+    await pool.query('CALL RegisterUser(?, ?, ?, ?, ?, ?)', [username, firstName, lastName, phoneNo, passwordHash, salt]);
+
+    console.log("User registered or updated successfully!");
    
-    res.status(201).json({ message: 'User registered successfully' });
+    res.status(201).json({ message: 'User registered or updated successfully' });
   } catch (error) {
-    console.error("Error registering user:", error);
-    res.status(500).json({ message: 'Error registering user' });
+    console.error("Error registering or updating user:", error);
+    res.status(500).json({ message: 'Error registering or updating user' });
   }
 });
+
 
 module.exports = router;
