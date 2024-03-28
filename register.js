@@ -12,7 +12,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
         token: 'token is required',
         firstName: 'First name is required',
         lastName: 'Last name is required',
-        phoneNo: 'Phone number is required',
+        phoneNo: 'Phone number is required',  
         password: 'Password is required'
       }});
   }
@@ -28,7 +28,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
     const passwordHash = await bcrypt.hash(password, salt);
 
     // Check if the user exists
-    const selectUserQuery = 'SELECT * FROM users WHERE token = ?';
+    const selectUserQuery = 'SELECT * FROM users WHERE InviteToken = ?';
     const [userRows] = await pool.query(selectUserQuery, [token]);
     
     if (userRows.length === 0) {
