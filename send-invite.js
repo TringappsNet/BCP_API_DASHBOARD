@@ -44,7 +44,8 @@ async function sendInvitationEmail(email) {
         }
       });
   
-      const inviteLink = `http://192.168.1.129:3002/register?token=${inviteToken}`; 
+      //const inviteLink = `http://192.168.1.129:3002/register?token=${inviteToken}`; 
+      const inviteLink = `http://192.168.1.50:3000/register?token=${inviteToken}`; 
       const mailOptions = {
         from: 'your_email@example.com',
         to: email,
