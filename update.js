@@ -2,50 +2,53 @@ const express = require('express');
 const router = express.Router();
 const pool = require('./pool');
 const bodyParser = require('body-parser');
-const columnMap = require('./bulk-upload');
 const updatedRow = require('./middlewares/updated-row');
 
 router.use(bodyParser.json());
-router.post('/', updatedRow, async (req, res) => {
-  const { editedRow, data } = req.body;
 
-  if (!editedRow || !editedRow.id) {
-    return res.status(400).json({ message: 'Invalid request' });
+router.post('/', updatedRow, async (req, res) => {
+  const { editedRow } = req.body;
+
+  if (!editedRow || !editedRow.ID) {
+    return res.status(400).json({ message: 'Invalid request or missing ID' });
   }
 
-  const columnNames = Object.keys(editedRow).filter(column => column !== 'id');
-  const placeholders = columnNames.map(() => '?').join(', ');
-
   try {
-    // Convert the Quarter value to a number
+    // Convert the Quarter value to a number if necessary
     if (editedRow.Quarter) {
       editedRow.Quarter = parseInt(editedRow.Quarter.replace('Q', ''), 10);
     }
 
-    const query = `UPDATE Portfolio_Companies_format SET ${columnNames.map((column) => `${column} = ?`).join(', ')} WHERE id = ?`;
-    const [result] = await pool.query(query, [...Object.values(editedRow), editedRow.id]);
+    // Construct set statements and values array
+    const setStatements = [];
+    const values = [];
+
+    Object.entries(editedRow).forEach(([key, value]) => {
+      // Skip ID field and null values
+      if (key !== 'ID' && value !== null) {
+        setStatements.push(`${key} = ?`);
+        values.push(value);
+      }
+    });
+
+    // Add ID value at the end
+    values.push(editedRow.ID);
+
+    // Construct SQL query
+    const query = `UPDATE Portfolio_Companies_format SET ${setStatements.join(', ')} WHERE ID = ?`;
+
+    // Execute the query
+    const [result] = await pool.query(query, values);
 
     if (result.affectedRows > 0) {
-      // Instead of setting the data directly, you should fetch the updated data from the database
-      const updatedData = await fetchUpdatedData(data.map(row => (row.id === editedRow.id ? editedRow : row)));
-      setData(updatedData);
-      setEditedRow(null);
-     res.status(200).json({ message: 'Row updated successfully', updatedData });
+      res.status(200).json({ message: 'Row updated successfully' });
     } else {
       res.status(200).json({ message: 'No changes made to the row' });
     }
   } catch (error) {
-    console.error('Error updating row:',error);
+    console.error('Error updating row:', error);
     res.status(500).json({ message: 'Error updating row' });
   }
 });
-
-// Add a new function to fetch the updated data from the database
-async function fetchUpdatedData(editedRows) {
-  // Replace this URL with your actual database endpoint
-  const response = await fetch(`${PortURL}/data`);
-  const updatedData = await response.json();
-  return updatedData;
-}
 
 module.exports = router;

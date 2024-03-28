@@ -5,11 +5,11 @@ const pool = require('./pool');
 const bodyParser = require('body-parser');
 
 router.post('/', bodyParser.json(), async (req, res) => {
-  const { username, firstName, lastName, phoneNo, password } = req.body;
+  const { token, firstName, lastName, phoneNo, password } = req.body;
 
-  if (!username || !firstName || !lastName || !phoneNo || !password) {
+  if (!token || !firstName || !lastName || !phoneNo || !password) {
     return res.status(400).json({ errors: {
-        username: 'Username is required',
+        token: 'token is required',
         firstName: 'First name is required',
         lastName: 'Last name is required',
         phoneNo: 'Phone number is required',
@@ -28,15 +28,15 @@ router.post('/', bodyParser.json(), async (req, res) => {
     const passwordHash = await bcrypt.hash(password, salt);
 
     // Check if the user exists
-    const selectUserQuery = 'SELECT * FROM users WHERE UserName = ?';
-    const [userRows] = await pool.query(selectUserQuery, [username]);
+    const selectUserQuery = 'SELECT * FROM users WHERE token = ?';
+    const [userRows] = await pool.query(selectUserQuery, [token]);
     
     if (userRows.length === 0) {
-      return res.status(404).json({ errors: { username: 'User not found' } });
+      return res.status(404).json({ errors: { token: 'User not found' } });
     }
 
     // Call the stored procedure to update or insert user data, including the salt
-    await pool.query('CALL RegisterUser(?, ?, ?, ?, ?, ?)', [username, firstName, lastName, phoneNo, passwordHash, salt]);
+    await pool.query('CALL RegisterUser(?, ?, ?, ?, ?, ?)', [token, firstName, lastName, phoneNo, passwordHash, salt]);
 
     console.log("User registered or updated successfully!");
    
