@@ -30,6 +30,7 @@ app.use('/login', require('./login'));
 app.use('/register', require('./register'));
 app.use('/logout', require('./logout'));
 app.use('/reset-password', require('./reset-password'));
+app.use('/reset-new', require('./reset-new'));
 app.use('/data', require('./data'));
 app.use('/bulk-upload', require('./bulk-upload'));
 app.use('/UserData', require('./UserData'));
