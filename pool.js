@@ -9,10 +9,10 @@ const mysql = require('mysql2/promise');
 
 
 const config = {
-    host: '192.168.1.50',
+    host: 'localhost',
     user: 'root',
     password: 'root',
-    database: 'BCP_Dashboard'
+    database: 'bcp'
   };
 
   

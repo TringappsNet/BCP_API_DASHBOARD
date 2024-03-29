@@ -40,7 +40,8 @@ router.post('/', async (req, res) => {
                 res.status(200).json({
                     message: 'Logged In',
                     userId: userId,
-                    email: email
+                    email: email,
+                    sessionId: sessionId,
                 });
             } else {
                 res.status(401).json({ message: 'Invalid Password!' });
