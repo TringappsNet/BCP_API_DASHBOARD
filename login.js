@@ -24,6 +24,7 @@ router.post('/', async (req, res) => {
                 // Create a session for the user
                 const sessionId = req.sessionID;
                 const userId = user.UserID;
+                const UserName = user.UserName
                 const createdAt = new Date().toISOString().slice(0, 19).replace('T', ' '); // Format to 'YYYY-MM-DD HH:MM:SS'
                 const expiration = new Date(Date.now() + 10 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' '); // Format to 'YYYY-MM-DD HH:MM:SS'
 
@@ -39,6 +40,7 @@ router.post('/', async (req, res) => {
 
                 res.status(200).json({
                     message: 'Logged In',
+                    UserName: UserName,
                     userId: userId,
                     email: email,
                     sessionId: sessionId,
