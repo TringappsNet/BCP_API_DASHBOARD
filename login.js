@@ -25,6 +25,8 @@ router.post('/', async (req, res) => {
                 const sessionId = req.sessionID;
                 const userId = user.UserID;
                 const UserName = user.UserName
+                const Organization = user.Organization
+
                 const createdAt = new Date().toISOString().slice(0, 19).replace('T', ' '); // Format to 'YYYY-MM-DD HH:MM:SS'
                 const expiration = new Date(Date.now() + 10 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' '); // Format to 'YYYY-MM-DD HH:MM:SS'
 
@@ -44,6 +46,7 @@ router.post('/', async (req, res) => {
                     userId: userId,
                     email: email,
                     sessionId: sessionId,
+                    Organization:Organization
                 });
             } else {
                 res.status(401).json({ message: 'Invalid Password!' });
