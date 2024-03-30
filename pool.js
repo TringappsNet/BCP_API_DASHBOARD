@@ -11,8 +11,8 @@ const mysql = require('mysql2/promise');
 const config = {
     host: 'localhost',
     user: 'root',
-    password: 'Jroot',
-    database: 'bcp_dashboard'
+    password: 'root',
+    database: 'bcp'
   };
 
   
