@@ -38,6 +38,9 @@ router.post('/', bodyParser.json(), async (req, res) => {
     // Call the stored procedure to update or insert user data, including the salt
     await pool.query('CALL RegisterUser(?, ?, ?, ?, ?, ?)', [token, firstName, lastName, phoneNo, passwordHash, salt]);
 
+    // Remove the token from the database
+    await pool.query('UPDATE users SET InviteToken = NULL WHERE InviteToken = ?', [token]);
+
     console.log("User registered or updated successfully!");
    
     res.status(201).json({ message: 'User registered or updated successfully' });
@@ -46,6 +49,5 @@ router.post('/', bodyParser.json(), async (req, res) => {
     res.status(500).json({ message: 'Error registering or updating user' });
   }
 });
-
 
 module.exports = router;

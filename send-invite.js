@@ -12,8 +12,13 @@ router.post('/', async (req, res) => {
   const userName = extractUserName(email);
 
   try {
+    // Insert the user data into the database
     await pool.query('INSERT INTO users (email, UserName, Role, Organization, isActive) VALUES (?, ?, ?, ?, ?)', [email, userName, role, organization, false]);
+    
+    // Send invitation email
     await sendInvitationEmail(email);
+    
+    // Return success response
     return res.status(200).json({ message: 'Invitation sent successfully' });
   } catch (error) {
     console.error('Error sending invitation:', error);
@@ -28,12 +33,15 @@ function extractUserName(email) {
 
 async function sendInvitationEmail(email) {
     try {
+      // Generate invite token and expiry time
       const inviteToken = generateInviteToken();
       const expiryTime = new Date();
       expiryTime.setHours(expiryTime.getHours() + 24);
   
+      // Update user record with invite token and expiry time
       await pool.query('UPDATE users SET InviteToken = ?, InviteTime = ?, isActive = ? WHERE Email = ?', [inviteToken, expiryTime, true, email]);
   
+      // Create transporter for sending email
       const transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 587,
@@ -44,7 +52,7 @@ async function sendInvitationEmail(email) {
         }
       });
   
-      //const inviteLink = `http://192.168.1.129:3002/register?token=${inviteToken}`; 
+      // Construct invitation email
       const inviteLink = `http://192.168.1.50:3000/register?token=${inviteToken}`; 
       const mailOptions = {
         from: 'your_email@example.com',
@@ -53,14 +61,14 @@ async function sendInvitationEmail(email) {
         text: `Hi there! You've been invited to join our platform. Your invitation Link is: ${inviteLink}`
       };
   
+      // Send invitation email
       await transporter.sendMail(mailOptions);
       console.log('Invitation email sent successfully');
     } catch (error) {
       console.error('Error sending invitation email:', error);
       throw error;
     }
-  }
-  
+}
 
 // Function to generate a random invite token
 function generateInviteToken() {
