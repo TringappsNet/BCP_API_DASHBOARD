@@ -49,7 +49,7 @@ async function sendInvitationEmail(email, inviteToken) {
     });
 
     // Construct invitation email with the invite token in the link
-    const inviteLink = `http://localhost:3002/register?tokrn//gwdeffgb$56vvbhjn?dfjmnADVTjj//=${encodeURIComponent(inviteToken)}`;
+    const inviteLink = `http://localhost:3002/register?=${encodeURIComponent(inviteToken)}`;
     const mailOptions = {
       from: 'sender@example.com',
       to: email,

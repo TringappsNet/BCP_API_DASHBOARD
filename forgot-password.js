@@ -57,7 +57,7 @@ async function sendResetLink(email, resetToken) {
         pass: SMTP_PASS
       }
     });
-    const resetLink = `http://localhost:3002/reset-password?sdtrf//btd4fc@#$fvvh=${encodeURIComponent(resetToken)}`;
+    const resetLink = `http://localhost:3002/reset-password?=${encodeURIComponent(resetToken)}`;
     const mailOptions = {
       from: 'sender@example.com',
       to: email,
