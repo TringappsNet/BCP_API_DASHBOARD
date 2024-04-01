@@ -37,6 +37,12 @@ app.use('/UserData', require('./UserData'));
 app.use('/update', require('./update'));
 app.use('/delete', require('./delete'));
 app.use('/validate-duplicates', require('./validate-duplicates'));
+app.use('/users', require('./Users'));
+app.use('/create-org', require('./Create_ORG'));
+app.use('/Updateuser', require('./UpdateUsers'));
+
+
+
 
 
 // Start the server
