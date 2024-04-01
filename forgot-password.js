@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
 const pool = require('./pool');
+const crypto = require('crypto');
 require('dotenv').config();
 
 const SMTP_USER = process.env.SMTP_USER;
@@ -17,9 +18,9 @@ router.post('/', async (req, res) => {
       return res.status(404).json({ message: 'Email not found' });
     }
     console.log('User ID:', user[0].UserID);
-    const resetTokenData = generateResetToken(user[0].UserID);
-    await updateResetToken(resetTokenData.token, resetTokenData.expiry, user[0].UserID); 
-    await sendResetLink(email, resetTokenData.token);
+    const resetToken = generateResetToken(user[0].UserID);
+    await updateResetToken(resetToken, user[0].UserID); 
+    await sendResetLink(email, resetToken);
     return res.status(200).json({ message: 'Reset link sent successfully' });
   } catch (err) {
     console.error('Error executing SQL query:', err);
@@ -28,19 +29,16 @@ router.post('/', async (req, res) => {
 });
 
 function generateResetToken(userId) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let token = userId.toString();
-  for (let i = 0; i < 10; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  const expiry = new Date();
-  expiry.setHours(expiry.getHours() + 24);
-  return { token, expiry, userId };
+  // Generate a unique token
+  const token = userId.toString() + Math.random().toString(36).substr(2, 10);
+  // Hash the token using SHA-256
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+  return hashedToken;
 }
 
-async function updateResetToken(resetToken, expiry, userId) {
+async function updateResetToken(resetToken, userId) {
   try {
-    await pool.query('UPDATE users SET resetToken = ?, resetTokenExpiry = ? WHERE UserID = ?', [resetToken, expiry, userId]);
+    await pool.query('UPDATE users SET resetToken = ? WHERE UserID = ?', [resetToken, userId]);
     console.log('Reset token updated in user table');
   } catch (err) {
     console.error('Error updating reset token in user table:', err);
@@ -59,8 +57,7 @@ async function sendResetLink(email, resetToken) {
         pass: SMTP_PASS
       }
     });
-    //const resetLink = `http://192.168.1.129:3002/reset-password?token=${resetToken}`;
-    const resetLink = `http://192.168.1.50:3000/reset-password?token=${resetToken}`;
+    const resetLink = `http://localhost:3002/reset-password?=${encodeURIComponent(resetToken)}`;
     const mailOptions = {
       from: 'sender@example.com',
       to: email,
