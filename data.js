@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const columnMap = require('./Objects');
 
 router.get('/', async (req, res) => {
+
   try {
     const { username } = req.query;
 

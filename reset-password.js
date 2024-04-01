@@ -4,6 +4,14 @@ const bcrypt = require('bcrypt');
 const pool = require('./pool');
 
 router.post('/', async (req, res) => {
+
+  const email = req.header('Email-ID');
+  const sessionId = req.header('Session-ID');
+
+  // Validate headers
+  if (!email || !sessionId) {
+    return res.status(400).json({ message: 'Email-ID and Session-ID headers are required!' });
+  }
   const { resetToken, newPassword } = req.body;
 
   try {
