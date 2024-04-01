@@ -3,9 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const pool = require('./pool');
 const bodyParser = require('body-parser');
-
-// Regular expression for email validation
-const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+const { emailRegex } = require('./Objects')
 
 router.post('/', async (req, res) => {
     const { email, password } = req.body;

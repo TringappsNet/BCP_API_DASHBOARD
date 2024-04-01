@@ -3,6 +3,7 @@ const router = express.Router();
 const nodemailer = require('nodemailer');
 const pool = require('./pool');
 const crypto = require('crypto');
+const { emailRegex } = require('./Objects')
 require('dotenv').config();
 
 const SMTP_USER = process.env.SMTP_USER;
@@ -10,6 +11,12 @@ const SMTP_PASS = process.env.SMTP_PASS;
 
 router.post('/', async (req, res) => {
   const { email } = req.body;
+
+  // Validate email using regex
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: 'Please provide a valid email address' });
+  }
+
   try {
     console.log('Executing SQL query...');
     const [user] = await pool.query('SELECT * FROM users WHERE Email = ?', [email]);
