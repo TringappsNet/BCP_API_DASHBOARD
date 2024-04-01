@@ -20,7 +20,7 @@ router.post('/', async (req, res) => {
     await pool.query('INSERT INTO users (email, UserName, Role, Organization, isActive, InviteToken) VALUES (?, ?, ?, ?, ?, ?)', [email, userName, role, organization, false, inviteToken]);
     
     // Send invitation email with the invite token
-    await sendInvitationEmail(email, inviteToken);
+    await sendInvitationEmail(email, inviteToken, req.headers['Session-ID'], req.headers['Email']);
     
     // Return success response
     return res.status(200).json({ message: 'Invitation sent successfully' });
@@ -35,7 +35,7 @@ function extractUserName(email) {
   return email.split('@')[0];
 }
 
-async function sendInvitationEmail(email, inviteToken) {
+async function sendInvitationEmail(email, inviteToken, sessionId, userEmail) {
   try {
     // Create transporter for sending email
     const transporter = nodemailer.createTransport({
@@ -54,7 +54,11 @@ async function sendInvitationEmail(email, inviteToken) {
       from: 'sender@example.com',
       to: email,
       subject: 'Invitation to join our platform',
-      text: `Hi there! You've been invited to join our platform. Your invitation link is: ${inviteLink}`
+      text: `Hi there! You've been invited to join our platform. Your invitation link is: ${inviteLink}`,
+      headers: {
+        'Session-ID': sessionId,
+        'Email': userEmail
+      }
     };
 
     // Send invitation email
