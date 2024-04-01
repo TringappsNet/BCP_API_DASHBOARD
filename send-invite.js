@@ -10,6 +10,13 @@ const SMTP_PASS = process.env.SMTP_PASS;
 router.post('/', async (req, res) => {
   const { email, role, organization } = req.body;
   const userName = extractUserName(email);
+  
+  const sessionId = req.header('Session-ID');
+  const emailHeader = req.header('Email');
+  
+  if (!sessionId || !emailHeader || emailHeader !== email) {
+    return res.status(400).json({ message: 'Invalid headers!' });
+  }
 
   try {
     // Insert the user data into the database
