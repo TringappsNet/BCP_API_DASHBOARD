@@ -5,19 +5,26 @@ const bodyParser = require('body-parser');
 const columnMap = require('./Objects');
 
 router.get('/', async (req, res) => {
-
   try {
-    const { username } = req.query;
+    const { username, organization } = req.query;
 
-    const [rows] = await pool.query('SELECT * FROM Portfolio_Companies_format WHERE UserName = ?', [username]);
-    console.log("Username",username);
+    let query = 'SELECT * FROM Portfolio_Companies_format WHERE UserName = ?';
+    const queryParams = [username];
+
+    if (organization) {
+      query += ' AND Organization = ?';
+      queryParams.push(organization);
+    }
+
+    const [rows] = await pool.query(query, queryParams);
+    console.log("Username", username);
     const data = rows.map(row => {
       const newRow = {};
       Object.keys(row).forEach(key => {
         // Exclude the second and third columns
         if (key !== 'Organization' && key !== 'UserName') {
           const newKey = columnMap[key] || key;
-          newRow[newKey] = key === 'Month/Year' ? formatDate(row[key],10) : row[key];
+          newRow[newKey] = key === 'Month/Year' ? formatDate(row[key], 10) : row[key];
         }
       });
       return newRow;
