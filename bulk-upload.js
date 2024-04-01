@@ -20,9 +20,9 @@ router.post('/', bodyParser.json(), async (req, res) => {
   
   // You may want to validate sessionId against your session data in the database
   
-  if (email !== emailHeader) {
-    return res.status(401).json({ message: 'Unauthorized: Email header does not match user data!' });
-  }
+  // if (email !== emailHeader) {
+  //   return res.status(401).json({ message: 'Unauthorized: Email header does not match user data!' });
+  // }
   
   if (!Array.isArray(data) || !data.every(item => typeof item === 'object')) {
     return res.status(400).json({ message: 'Invalid JSON body format' });
