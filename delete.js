@@ -5,8 +5,9 @@ const pool = require('./pool');
 router.post('/', async (req, res) => {
   const sessionId = req.header('Session-ID');
   const emailHeader = req.header('Email');
+  const email = req.header('Email'); // Extract email from request headers
   
-  if (!sessionId || !emailHeader) {
+  if (!sessionId || !emailHeader || !email) {
     return res.status(400).json({ message: 'Session ID and Email headers are required!' });
   }
   
@@ -40,5 +41,6 @@ router.post('/', async (req, res) => {
     res.status(500).json({ message: 'Error deleting rows' });
   }
 });
+
 
 module.exports = router;
