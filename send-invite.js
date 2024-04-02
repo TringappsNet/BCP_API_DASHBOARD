@@ -13,11 +13,25 @@ router.post('/', async (req, res) => {
   const userName = extractUserName(email);
   
   try {
+    // Get organization ID from the organization table
+    const orgResult = await pool.query('SELECT org_ID FROM organization WHERE org_name = ?', [organization]);
+    if (orgResult.length === 0) {
+      return res.status(400).json({ message: 'Organization not found' });
+    }
+    const orgID = orgResult[0][0].org_ID;
+
+    // Get role ID from the role table
+    const roleResult = await pool.query('SELECT role_ID FROM role WHERE role = ?', [role]);
+    if (roleResult.length === 0) {
+      return res.status(400).json({ message: 'Role not found' });
+    }
+    const roleID = roleResult[0][0].role_ID;
+
     // Generate a unique invite token using SHA-256
     const inviteToken = generateInviteToken();
     
-    // Store the invite token in the database
-    await pool.query('INSERT INTO users (email, UserName, Role, Organization, isActive, InviteToken) VALUES (?, ?, ?, ?, ?, ?)', [email, userName, role, organization, false, inviteToken]);
+    // Store the invite token in the database along with organization ID and role ID
+    await pool.query('INSERT INTO users (email, UserName, Role_ID, Org_ID, isActive, InviteToken) VALUES (?, ?, ?, ?, ?, ?)', [email, userName, roleID, orgID, false, inviteToken]);
     
     // Send invitation email with the invite token
     await sendInvitationEmail(email, inviteToken, req.headers['Session-ID'], req.headers['Email']);
