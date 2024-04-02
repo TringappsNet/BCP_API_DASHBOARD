@@ -14,6 +14,10 @@ router.post('/', bodyParser.json(), async (req, res) => {
   const sessionId = req.header('Session-ID');
   const emailHeader = req.header('Email');
   
+  if (!sessionId || !emailHeader) {
+    return res.status(400).json({ message: 'Session ID and Email headers are required!' });
+  }
+
   
   if (!Array.isArray(data) || !data.every(item => typeof item === 'object')) {
     return res.status(400).json({ message: 'Invalid JSON body format' });
@@ -33,6 +37,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
 
     const insertPromises = data.map(row => {
       const values = [orgID, username, ...Object.values(row).map(value => typeof value === 'string' ? value.replace(/ /g, '') : value)];
+      console.log('Values:', values);
       const columns = ['Org_ID', 'UserName', ...Object.keys(row).map(key => columnMap[key])];
 
       console.log('Inserting row:', values); 
