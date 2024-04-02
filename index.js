@@ -40,6 +40,8 @@ app.use('/validate-duplicates', require('./validate-duplicates'));
 app.use('/users', require('./Users'));
 app.use('/create-org', require('./Create_ORG'));
 app.use('/Updateuser', require('./UpdateUsers'));
+app.use('/DeleteUser', require('./DeleteUser'));
+
 
 
 
