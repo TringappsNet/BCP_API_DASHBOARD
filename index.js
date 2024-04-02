@@ -41,6 +41,7 @@ app.use('/users', require('./Users'));
 app.use('/create-org', require('./Create_ORG'));
 app.use('/Updateuser', require('./UpdateUsers'));
 app.use('/DeleteUser', require('./DeleteUser'));
+app.use('/Get-Org', require('./Get-Org'));
 
 
 
