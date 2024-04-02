@@ -8,7 +8,7 @@ const { columnMap } = require('./Objects');
 
 router.post('/', bodyParser.json(), async (req, res) => {
   const { userData, data } = req.body; 
-  const { username, organization, email } = userData;
+  const { username, organization, email, roleID } = userData; // Add roleID to the destructured object
 
   // Validate headers
   const sessionId = req.header('Session-ID');
@@ -39,13 +39,14 @@ router.post('/', bodyParser.json(), async (req, res) => {
     }
 
     const insertPromises = data.map(row => {
-      const values = [orgID, username, ...Object.values(row).map(value => typeof value === 'string' ? value.replace(/ /g, '') : value)];
-      const columns = ['org_ID', 'UserName', ...Object.keys(row).map(key => columnMap[key])];
-
-      const query1 = `INSERT INTO Portfolio_Companies_format (${columns.join(', ')}) VALUES (?)`;
-      return connection.query(query1, [values]);
-    });
-
+      const values = [orgID, username, roleID, ...Object.values(row).map(value => typeof value === 'string' ? value.replace(/ /g, '') : value)];
+      const columns = ['Org_ID', 'UserName', 'Role_ID', ...Object.keys(row).map(key => columnMap[key])];
+    
+      const placeholders = values.map(() => '?').join(', '); // Create placeholders for prepared statement
+      const query1 = 'INSERT INTO Portfolio_Companies_format (' + columns.join(', ') + ') VALUES (' + placeholders + ')'; // Combine columns and placeholders
+      return connection.query(query1, values); // Pass values directly to the query
+    }); 
+    
     await Promise.all(insertPromises);
     await connection.commit();
     connection.release();
@@ -56,6 +57,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
     res.status(500).json({ message: 'Error inserting data' });
   }
 });
+
 
 
 
