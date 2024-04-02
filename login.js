@@ -2,11 +2,22 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const pool = require('./pool');
+const bodyParser = require('body-parser');
+const { emailRegex } = require('./Objects')
 
 router.post('/', async (req, res) => {
     const { email, password } = req.body;
-
+  
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required!' });
+    }
+  
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Please enter a valid email address!' });
+    }
+  
     try {
+
         // Check if email and password are provided
         if (!email || !password) {
             return res.status(400).json({ error: 'Email and password are required!' });
@@ -64,15 +75,18 @@ router.post('/', async (req, res) => {
                 // Invalid password
                 return res.status(401).json({ message: 'Invalid Password!' });
             }
+
         } else {
-            // User not found
-            return res.status(400).json({ message: 'User Not Found!' });
+          res.status(401).json({ error: 'Invalid Password!' });
         }
+      } else {
+        res.status(400).json({ error: 'User Not Found!' });
+      }
     } catch (error) {
-        console.error("Error logging in user:", error);
-        return res.status(500).json({ message: 'Error logging in user' });
+      console.error("Error logging in user:", error);
+      res.status(500).json({ error: 'Error logging in user' });
     }
-});
+  });
+  
 
 module.exports = router;
-    

@@ -17,12 +17,6 @@ router.post('/', bodyParser.json(), async (req, res) => {
   if (!sessionId || !emailHeader) {
     return res.status(400).json({ message: 'Session ID and Email headers are required!' });
   }
-  
-  // You may want to validate sessionId against your session data in the database
-  
-  // if (email !== emailHeader) {
-  //   return res.status(401).json({ message: 'Unauthorized: Email header does not match user data!' });
-  // }
 
   
   if (!Array.isArray(data) || !data.every(item => typeof item === 'object')) {
@@ -42,10 +36,10 @@ router.post('/', bodyParser.json(), async (req, res) => {
     }
 
     const insertPromises = data.map(row => {
+      const values = [orgID, username, ...Object.values(row).map(value => typeof value === 'string' ? value.replace(/ /g, '') : value)];
+      console.log('Values:', values);
+      const columns = ['Org_ID', 'UserName', ...Object.keys(row).map(key => columnMap[key])];
 
-      const values = [email, username, ...Object.values(row).map(value => typeof value === 'string' ? value.replace(/ /g, '') : value)];
-      const columns = ['Email', 'UserName', ...Object.keys(row).map(key => columnMap[key])];
-    
       console.log('Inserting row:', values); 
     
       const placeholders = values.map(() => '?').join(', '); // Create placeholders for prepared statement
