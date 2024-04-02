@@ -17,8 +17,12 @@ router.post('/', async (req, res) => {
     }
   
     try {
-      const [rows] = await pool.query('SELECT * FROM Users WHERE Email = ?', [email]);
-  
+        const [rows] = await pool.query(`
+        SELECT u.*, o.org_name AS OrganizationName
+        FROM users u
+        LEFT JOIN organization o ON u.Org_ID = o.org_ID
+        WHERE Email = ?`, [email]);
+      
       if (rows.length > 0) {
         const user = rows[0];
         const isValidPassword = await bcrypt.compare(password, user.PasswordHash);
@@ -27,7 +31,7 @@ router.post('/', async (req, res) => {
           const sessionId = req.sessionID;
           const userId = user.UserID;
           const UserName = user.UserName
-          const Organization = user.Organization
+          const Organization = user.OrganizationName
   
           const createdAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
           const expiration = new Date(Date.now() + 10 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');

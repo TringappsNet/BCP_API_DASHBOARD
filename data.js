@@ -5,14 +5,19 @@ const bodyParser = require('body-parser');
 const columnMap = require('./Objects');
 
 router.get('/', async (req, res) => {
+
+
   try {
     const { username, organization } = req.query;
 
-    let query = 'SELECT * FROM Portfolio_Companies_format WHERE UserName = ?';
+    let query = 'SELECT p.*, o.org_name AS OrganizationName FROM Portfolio_Companies_format p';
+    query += ' LEFT JOIN organization o ON p.Org_ID = o.org_ID';
+    query += ' WHERE p.UserName = ?';
+
     const queryParams = [username];
 
     if (organization) {
-      query += ' AND Organization = ?';
+      query += ' AND p.Org_ID = ?';
       queryParams.push(organization);
     }
 
@@ -21,8 +26,7 @@ router.get('/', async (req, res) => {
     const data = rows.map(row => {
       const newRow = {};
       Object.keys(row).forEach(key => {
-        // Exclude the second and third columns
-        if (key !== 'Organization' && key !== 'UserName') {
+        if (key !== 'Org_ID' && key !== 'UserName') {
           const newKey = columnMap[key] || key;
           newRow[newKey] = key === 'Month/Year' ? formatDate(row[key], 10) : row[key];
         }
