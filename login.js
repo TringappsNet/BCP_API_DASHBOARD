@@ -2,25 +2,20 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const pool = require('./pool');
-const bodyParser = require('body-parser');
-const { emailRegex } = require('./Objects')
+const { emailRegex } = require('./Objects');
 
 router.post('/', async (req, res) => {
     const { email, password } = req.body;
   
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required!' });
-    }
-  
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: 'Please enter a valid email address!' });
-    }
-  
     try {
-
         // Check if email and password are provided
         if (!email || !password) {
             return res.status(400).json({ error: 'Email and password are required!' });
+        }
+
+        // Validate email format
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ error: 'Please enter a valid email address!' });
         }
 
         // Retrieve user information from the database
@@ -34,7 +29,6 @@ router.post('/', async (req, res) => {
                 // Check session status
                 const [sessionRows] = await pool.query('SELECT * FROM Session WHERE UserID = ?', [user.UserID]);
                 if (sessionRows.length > 0) {
-                    sessionId = sessionRows[0].SessionID;
                     const session = sessionRows[0];
                     const expirationTime = new Date(session.Expiration).getTime();
                     const currentTime = Date.now();
@@ -75,18 +69,14 @@ router.post('/', async (req, res) => {
                 // Invalid password
                 return res.status(401).json({ message: 'Invalid Password!' });
             }
-
         } else {
-          res.status(401).json({ error: 'Invalid Password!' });
+            // User not found
+            return res.status(400).json({ message: 'User Not Found!' });
         }
-      } else {
-        res.status(400).json({ error: 'User Not Found!' });
-      }
     } catch (error) {
-      console.error("Error logging in user:", error);
-      res.status(500).json({ error: 'Error logging in user' });
+        console.error("Error logging in user:", error);
+        return res.status(500).json({ error: 'Error logging in user' });
     }
-  });
-  
+});
 
 module.exports = router;
