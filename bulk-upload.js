@@ -35,12 +35,14 @@ router.post('/', bodyParser.json(), async (req, res) => {
     const insertPromises = data.map(row => {
       const values = [email, username, ...Object.values(row).map(value => typeof value === 'string' ? value.replace(/ /g, '') : value)];
       const columns = ['Email', 'UserName', ...Object.keys(row).map(key => columnMap[key])];
-
+    
       console.log('Inserting row:', values); 
-
-      const query1 = 'INSERT INTO Portfolio_Companies_format (' + columns.join(', ') + ') VALUES (?)';
-      return connection.query(query1, [values]);
-    });
+    
+      const placeholders = values.map(() => '?').join(', '); // Create placeholders for prepared statement
+      const query1 = 'INSERT INTO Portfolio_Companies_format (' + columns.join(', ') + ') VALUES (' + placeholders + ')'; // Combine columns and placeholders
+      return connection.query(query1, values); // Pass values directly to the query
+    }); 
+    
 
     await Promise.all(insertPromises);
     await connection.commit();

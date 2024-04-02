@@ -35,12 +35,11 @@ router.post('/', async (req, res) => {
 
                 // Store session information in the Session table
                 await pool.query('INSERT INTO Session (UserID, SessionID, CreatedAt, Expiration) VALUES (?, ?, ?, ?)', [userId, sessionId, createdAt, expiration]);
-
-                // Set the session ID as a cookie in the response headers
+            
                 res.cookie('sessionId', sessionId, {
                     httpOnly: true,
-                    secure: false, // Set to true if using HTTPS
-                    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+                    secure: false, 
+                    maxAge: 24 * 60 * 60 * 1000 
                 });
 
                 res.status(200).json({
