@@ -3,7 +3,7 @@ const router = express.Router();
 const pool = require('./pool');
 const bodyParser = require('body-parser');
 const moment = require('moment');
-const columnMap = require('./Objects');
+const { columnMap } = require('./Objects');
 
 
 router.post('/', bodyParser.json(), async (req, res) => {
@@ -18,6 +18,9 @@ router.post('/', bodyParser.json(), async (req, res) => {
     return res.status(400).json({ message: 'Session ID and Email headers are required!' });
   }
 
+  if (email !== emailHeader) {
+    return res.status(401).json({ message: 'Unauthorized: Email header does not match user data!' });
+  }
   
   if (!Array.isArray(data) || !data.every(item => typeof item === 'object')) {
     return res.status(400).json({ message: 'Invalid JSON body format' });
@@ -37,16 +40,11 @@ router.post('/', bodyParser.json(), async (req, res) => {
 
     const insertPromises = data.map(row => {
       const values = [orgID, username, ...Object.values(row).map(value => typeof value === 'string' ? value.replace(/ /g, '') : value)];
-      console.log('Values:', values);
-      const columns = ['Org_ID', 'UserName', ...Object.keys(row).map(key => columnMap[key])];
+      const columns = ['org_ID', 'UserName', ...Object.keys(row).map(key => columnMap[key])];
 
-      console.log('Inserting row:', values); 
-    
-      const placeholders = values.map(() => '?').join(', '); // Create placeholders for prepared statement
-      const query1 = 'INSERT INTO Portfolio_Companies_format (' + columns.join(', ') + ') VALUES (' + placeholders + ')'; // Combine columns and placeholders
-      return connection.query(query1, values); // Pass values directly to the query
-    }); 
-    
+      const query1 = `INSERT INTO Portfolio_Companies_format (${columns.join(', ')}) VALUES (?)`;
+      return connection.query(query1, [values]);
+    });
 
     await Promise.all(insertPromises);
     await connection.commit();
@@ -58,5 +56,8 @@ router.post('/', bodyParser.json(), async (req, res) => {
     res.status(500).json({ message: 'Error inserting data' });
   }
 });
+
+
+
   
 module.exports = router;

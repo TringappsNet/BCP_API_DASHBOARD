@@ -35,11 +35,9 @@ router.post('/', async (req, res) => {
                 const userId = user.UserID;
                 const UserName = user.UserName;
                 const Organization = user.OrganizationName;
-
-                // Insert session details into the Session table
                 const createdAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
                 const expiration = new Date(Date.now() + 10 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
-                await pool.query('INSERT INTO Session (UserID, SessionID, CreatedAt, Expiration) VALUES (?, ?, ?, ?)', [userId, sessionId, createdAt, expiration]);
+                await pool.query('UPDATE users SET CurrentSessionID = ?, LastLoginTime = ? WHERE Email = ?', [sessionId, createdAt, email]);
 
                 // Set session cookie
                 res.cookie('sessionId', sessionId, {
