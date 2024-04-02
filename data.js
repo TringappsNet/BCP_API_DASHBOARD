@@ -1,35 +1,26 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('./pool');
-const bodyParser = require('body-parser');
 const columnMap = require('./Objects');
 
 router.get('/', async (req, res) => {
-
-
   try {
     const { username, organization } = req.query;
 
-    let query = 'SELECT p.*, o.org_name AS OrganizationName FROM Portfolio_Companies_format p';
-    query += ' LEFT JOIN organization o ON p.Org_ID = o.org_ID';
-    query += ' WHERE p.UserName = ?';
+    // Convert organization to an integer if it's a valid number
+    const organizationId = !isNaN(organization) ? parseInt(organization) : null;
 
-    const queryParams = [username];
+    // Call the stored procedure GetPortfolioData
+    const [rows] = await pool.query('CALL GetPortfolioData(?, ?)', [username, organizationId]);
 
-    if (organization) {
-      query += ' AND p.Org_ID = ?';
-      queryParams.push(organization);
-    }
+    // Log the data received from the database
+    console.log("Data fetched from the database:", rows);
 
-    const [rows] = await pool.query(query, queryParams);
-    console.log("Username", username);
     const data = rows.map(row => {
       const newRow = {};
       Object.keys(row).forEach(key => {
-        if (key !== 'Org_ID' && key !== 'UserName') {
-          const newKey = columnMap[key] || key;
-          newRow[newKey] = key === 'Month/Year' ? formatDate(row[key], 10) : row[key];
-        }
+        const newKey = columnMap[key] || key; // Use columnMap to map fields
+        newRow[newKey] = key === 'MonthYear' ? formatDate(row[key], 10) : row[key]; // Format 'MonthYear' field
       });
       return newRow;
     });
