@@ -20,28 +20,20 @@ router.post('/', async (req, res) => {
             const user = rows[0];
             const isValidPassword = await bcrypt.compare(password, user.PasswordHash);
             if (isValidPassword) {
-                // Check session status
+                let sessionId;
+                // Check if the user already has a session
                 const [sessionRows] = await pool.query('SELECT * FROM Session WHERE UserID = ?', [user.UserID]);
                 if (sessionRows.length > 0) {
-                    const session = sessionRows[0];
-                    const expirationTime = new Date(session.Expiration).getTime();
-                    const currentTime = Date.now();
-                    if (currentTime > expirationTime) {
-                        // Session has expired
-                        return res.status(401).json({ message: 'Session has expired. Please log in again.' });
-                    }
+                    // User has an existing session, use that session ID
+                    sessionId = sessionRows[0].SessionID;
                 } else {
-                    // Session not found
-                    return res.status(401).json({ message: 'Session not found. Please log in again.' });
+                    // User doesn't have a session, create a new session ID
+                    sessionId = req.sessionID;
+                    const createdAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+                    const expiration = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+
+                    await pool.query('INSERT INTO Session (UserID, SessionID, CreatedAt, Expiration) VALUES (?, ?, ?, ?)', [user.UserID, sessionId, createdAt, expiration]);
                 }
-
-                // Create or update session
-                const sessionId = req.sessionID;
-                const userId = user.UserID;
-                const createdAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
-                const expiration = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
-
-                await pool.query('INSERT INTO Session (UserID, SessionID, CreatedAt, Expiration) VALUES (?, ?, ?, ?)', [userId, sessionId, createdAt, expiration]);
 
                 // Set session cookie
                 res.cookie('sessionId', sessionId, {
@@ -54,10 +46,9 @@ router.post('/', async (req, res) => {
                 return res.status(200).json({
                     message: 'Logged In',
                     UserName: user.UserName,
-                    userId: userId,
+                    userId: user.UserID,
                     email: email,
-                    sessionId: sessionId,
-                    createdAt: createdAt
+                    sessionId: sessionId
                 });
             } else {
                 // Invalid password
@@ -74,4 +65,3 @@ router.post('/', async (req, res) => {
 });
 
 module.exports = router;
-    
