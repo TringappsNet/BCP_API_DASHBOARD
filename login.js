@@ -12,6 +12,7 @@ router.post('/', async (req, res) => {
     }
 
     try {
+
         // Check if the user with the provided email exists
         const [rows] = await pool.query('SELECT * FROM Users WHERE Email = ?', [email]);
         if (rows.length > 0) {
@@ -55,6 +56,7 @@ router.post('/', async (req, res) => {
                 console.log('Invalid password provided');
                 res.status(401).json({ message: 'Invalid Password!' });
             }
+
         } else {
             console.log('User not found');
             res.status(400).json({ message: 'User Not Found!' });

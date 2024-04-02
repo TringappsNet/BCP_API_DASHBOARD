@@ -8,7 +8,7 @@ const columnMap = require('./Objects');
 
 router.post('/', bodyParser.json(), async (req, res) => {
   const { userData, data } = req.body; 
-  const { username, email } = userData;
+  const { username, organization, email } = userData;
 
   // Validate headers
   const sessionId = req.header('Session-ID');
@@ -23,6 +23,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
   // if (email !== emailHeader) {
   //   return res.status(401).json({ message: 'Unauthorized: Email header does not match user data!' });
   // }
+
   
   if (!Array.isArray(data) || !data.every(item => typeof item === 'object')) {
     return res.status(400).json({ message: 'Invalid JSON body format' });
@@ -32,7 +33,16 @@ router.post('/', bodyParser.json(), async (req, res) => {
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
+    // Fetch Org_ID corresponding to the organization name
+    const [orgResult] = await connection.query('SELECT org_ID FROM organization WHERE org_name = ?', [organization]);
+    const orgID = orgResult[0] ? orgResult[0].org_ID : null;
+
+    if (!orgID) {
+      throw new Error('Organization not found');
+    }
+
     const insertPromises = data.map(row => {
+
       const values = [email, username, ...Object.values(row).map(value => typeof value === 'string' ? value.replace(/ /g, '') : value)];
       const columns = ['Email', 'UserName', ...Object.keys(row).map(key => columnMap[key])];
     
