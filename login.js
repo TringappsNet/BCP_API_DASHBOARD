@@ -36,6 +36,7 @@ router.post('/', async (req, res) => {
                 const UserName = user.UserName;
                 const Organization = user.OrganizationName;
                 const Role_ID = user.Role_ID; 
+                const Org_ID=user.Org_ID;
                 const createdAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
                 const expiration = new Date(Date.now() + 10 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
                 await pool.query('UPDATE users SET CurrentSessionID = ?, LastLoginTime = ? WHERE Email = ?', [sessionId, createdAt, email]);
@@ -55,7 +56,9 @@ router.post('/', async (req, res) => {
                     email: email,
                     sessionId: sessionId,
                     Organization: Organization,
-                    Role_ID: Role_ID 
+                    Role_ID: Role_ID,
+                     Org_ID:Org_ID
+
                 });
             } else {
                 // Invalid password
