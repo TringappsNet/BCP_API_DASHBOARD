@@ -4,6 +4,92 @@ const bcrypt = require('bcrypt');
 const pool = require('./pool');
 const { emailRegex } = require('./Objects');
 
+/**
+ * @swagger
+ * /login:
+ *   post:
+ *     tags: ['Portfolio']
+ *     summary: Logs in a user
+ *     description: Logs in a user with the provided email and password.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: User's email address
+ *               password:
+ *                 type: string
+ *                 description: User's password
+ *             required:
+ *               - email
+ *               - password
+ *     responses:
+ *       '200':
+ *         description: Logged in successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Message indicating successful login
+ *                 UserName:
+ *                   type: string
+ *                   description: User's name
+ *                 userId:
+ *                   type: integer
+ *                   description: User's ID
+ *                 email:
+ *                   type: string
+ *                   format: email
+ *                   description: User's email address
+ *                 sessionId:
+ *                   type: string
+ *                   description: Session ID
+ *                 Organization:
+ *                   type: string
+ *                   description: Organization name
+ *                 Role_ID:
+ *                   type: integer
+ *                   description: User's role ID
+ *       '400':
+ *         description: Invalid request or user not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message
+ *       '401':
+ *         description: Invalid password
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message
+ */
+
 router.post('/', async (req, res) => {
     const { email, password } = req.body;
   

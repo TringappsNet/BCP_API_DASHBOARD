@@ -4,6 +4,42 @@ const pool = require('./pool');
 const bodyParser = require('body-parser');
 const columnMap = require('./Objects');
 
+/**
+ * @swagger
+ * /UserData:
+ *   get:
+ *     tags: ['Portfolio']
+ *     summary: Retrieve Excel data
+ *     description: Retrieves data from the ExcelData table.
+ *     responses:
+ *       '200':
+ *         description: Successful response with Excel data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   columnName1:
+ *                     type: string
+ *                     description: Description of column 1
+ *                   columnName2:
+ *                     type: string
+ *                     description: Description of column 2
+ *                   # Add other column properties here
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message
+ */
+
 router.get('/', async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM exceldata');

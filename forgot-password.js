@@ -1,9 +1,70 @@
+/**
+ * @swagger
+ * /reset-password:
+ *   post:
+ *     tags: ['Portfolio']
+ *     summary: Send password reset link
+ *     description: Sends a password reset link to the provided email address.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: The email address to send the password reset link.
+ *     responses:
+ *       '200':
+ *         description: Reset link sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message indicating that the reset link has been sent successfully.
+ *       '400':
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating that the email provided is invalid.
+ *       '404':
+ *         description: Email not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating that the provided email was not found.
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating an internal server error.
+ */
+
 const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
 const pool = require('./pool');
 const crypto = require('crypto');
-const { emailRegex } = require('./Objects')
+const { emailRegex } = require('./Objects');
 require('dotenv').config();
 
 const SMTP_USER = process.env.SMTP_USER;

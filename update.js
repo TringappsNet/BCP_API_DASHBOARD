@@ -1,3 +1,67 @@
+/**
+ * @swagger
+ * /update:
+ *   post:
+ *     tags: ['Portfolio']
+ *     summary: Update a row
+ *     description: |
+ *       Update a row in the database based on the provided data.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: The email of the user making the request.
+ *               editedRow:
+ *                 type: object
+ *                 description: The edited row data.
+ *     responses:
+ *       '200':
+ *         description: Row updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message indicating that the row has been updated successfully.
+ *       '400':
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating a bad request, such as missing or invalid input data.
+ *       '401':
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating unauthorized access due to mismatched email headers.
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating an internal server error.
+ */
+
 const express = require('express');
 const router = express.Router();
 const pool = require('./pool');

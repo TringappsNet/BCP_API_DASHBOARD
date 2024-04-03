@@ -8,6 +8,63 @@ require('dotenv').config();
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 
+/**
+ * @swagger
+ * /invitation:
+ *   post:
+ *     tags: ['Portfolio']
+ *     summary: Send invitation email
+ *     description: |
+ *       Sends an invitation email to the specified email address, allowing the recipient to join the platform.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: The email address of the recipient.
+ *               role:
+ *                 type: string
+ *                 description: The role to be assigned to the invited user.
+ *               organization:
+ *                 type: string
+ *                 description: The organization to which the invited user belongs.
+ *     responses:
+ *       '200':
+ *         description: Invitation sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message indicating that the invitation email has been sent successfully.
+ *       '400':
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating that the organization or role specified in the request does not exist.
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating an internal server error.
+ */
 router.post('/', async (req, res) => {
   const { email, role, organization } = req.body;
   const userName = extractUserName(email);

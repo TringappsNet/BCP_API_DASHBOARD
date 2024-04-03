@@ -1,3 +1,66 @@
+/**
+ * @swagger
+ * /delete:
+ *   post:
+ *     tags: ['Portfolio']
+ *     summary: Delete rows
+ *     description: |
+ *       Deletes rows from the database based on the provided IDs.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               ids:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: An array of IDs of the rows to be deleted.
+ *     responses:
+ *       '200':
+ *         description: Rows deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message indicating that the rows have been deleted successfully.
+ *       '400':
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating a bad request, such as missing or invalid input data.
+ *       '401':
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating unauthorized access due to mismatched email headers.
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating an internal server error.
+ */
+
 const express = require('express');
 const router = express.Router();
 const pool = require('./pool');
@@ -41,6 +104,5 @@ router.post('/', async (req, res) => {
     res.status(500).json({ message: 'Error deleting rows' });
   }
 });
-
 
 module.exports = router;

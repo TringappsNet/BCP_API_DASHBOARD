@@ -1,3 +1,38 @@
+/**
+ * @swagger
+ * /Get-Org:
+ *   get:
+ *     tags: ['Portfolio']
+ *     summary: Retrieve all organization names
+ *     description: Retrieves a list of all organization names along with their IDs.
+ *     responses:
+ *       '200':
+ *         description: A list of organization names and their IDs
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   org_ID:
+ *                     type: integer
+ *                     description: The ID of the organization.
+ *                   org_name:
+ *                     type: string
+ *                     description: The name of the organization.
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message indicating an internal server error.
+ */
+
 const express = require('express');
 const router = express.Router();
 const pool = require('./pool');

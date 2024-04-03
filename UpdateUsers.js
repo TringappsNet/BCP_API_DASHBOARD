@@ -1,3 +1,76 @@
+/**
+ * @swagger
+ * /Updateuser:
+ *   post:
+ *     tags: ['Portfolio']
+ *     summary: Update user role
+ *     description: Updates the role of a user based on their email address.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: The email address of the user whose role needs to be updated.
+ *               Role:
+ *                 type: string
+ *                 description: The new role to assign to the user.
+ *     responses:
+ *       '200':
+ *         description: User role updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Confirmation message indicating that the user role was updated successfully.
+ *       '400':
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message indicating missing required parameters.
+ *       '401':
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating unauthorized access due to mismatch in email headers.
+ *       '404':
+ *         description: Role not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message indicating that the specified role was not found.
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message indicating an internal server error.
+ */
+
 const express = require('express');
 const router = express.Router();
 const pool = require('./pool');

@@ -1,3 +1,47 @@
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     tags: ['Portfolio']
+ *     summary: Retrieve user information
+ *     description: Retrieves user information along with organization name and role.
+ *     responses:
+ *       '200':
+ *         description: A list of users with their information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   UserName:
+ *                     type: string
+ *                     description: The username of the user
+ *                   Organization:
+ *                     type: string
+ *                     description: The organization name of the user
+ *                   Email:
+ *                     type: string
+ *                     description: The email address of the user
+ *                   Role:
+ *                     type: string
+ *                     description: The role of the user
+ *                   isActive:
+ *                     type: boolean
+ *                     description: Indicates whether the user is active or not
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message indicating the internal server error
+ */
+
 const express = require('express');
 const router = express.Router();
 const pool = require('./pool');

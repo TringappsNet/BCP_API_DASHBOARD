@@ -1,10 +1,89 @@
+/**
+ * @swagger
+ * /bulk-upload:
+ *   post:
+ *     tags: ['Portfolio']
+ *     summary: Upload data
+ *     description: |
+ *       Uploads data to the database.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userData:
+ *                 type: object
+ *                 properties:
+ *                   username:
+ *                     type: string
+ *                     description: The username of the user uploading the data.
+ *                   organization:
+ *                     type: string
+ *                     description: The name of the organization.
+ *                   email:
+ *                     type: string
+ *                     format: email
+ *                     description: The email address of the user uploading the data.
+ *                   roleID:
+ *                     type: integer
+ *                     description: The role ID of the user uploading the data.
+ *               data:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   description: |
+ *                     An object representing the data to be uploaded. Each key-value pair represents a column and its corresponding value.
+ *     responses:
+ *       '200':
+ *         description: Data uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message indicating that the data has been uploaded successfully.
+ *       '400':
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating a bad request, such as missing or invalid input data.
+ *       '401':
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating unauthorized access due to mismatched email headers.
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating an internal server error.
+ */
+
 const express = require('express');
 const router = express.Router();
 const pool = require('./pool');
 const bodyParser = require('body-parser');
 const moment = require('moment');
 const { columnMap } = require('./Objects');
-
 
 router.post('/', bodyParser.json(), async (req, res) => {
   const { userData, data } = req.body; 
@@ -58,8 +137,4 @@ router.post('/', bodyParser.json(), async (req, res) => {
   }
 });
 
-
-
-
-  
 module.exports = router;
