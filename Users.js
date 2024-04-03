@@ -6,10 +6,18 @@ router.get('/', async (req, res) => {
   try {
     // Query the database to retrieve user information along with organization name and role
     const query = `
-      SELECT u.UserName, o.org_name AS Organization, u.Email, r.role AS Role
-      FROM users u
-      LEFT JOIN organization o ON u.Org_ID = o.org_ID
-      LEFT JOIN role r ON u.Role_ID = r.role_ID
+    SELECT 
+    u.UserName, 
+    o.org_name AS Organization, 
+    u.Email, 
+    r.role AS Role, 
+    u.isActive
+FROM 
+    users u
+LEFT JOIN 
+    organization o ON u.Org_ID = o.org_ID
+LEFT JOIN 
+    role r ON u.Role_ID = r.role_ID;
     `;
     const [rows] = await pool.query(query);
     
