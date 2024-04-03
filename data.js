@@ -3,6 +3,56 @@ const router = express.Router();
 const pool = require('./pool');
 const columnMap = require('./Objects');
 
+/**
+ * @swagger
+ * /data:
+ *   get:
+ *     tags: ['Portfolio']
+ *     summary: Retrieve portfolio data
+ *     description: Retrieves portfolio data based on the provided username and organization.
+ *     parameters:
+ *       - in: query
+ *         name: username
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The username for which to retrieve portfolio data
+ *       - in: query
+ *         name: organization
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: The organization ID for which to retrieve portfolio data
+ *     responses:
+ *       '200':
+ *         description: Portfolio data retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   fieldName:
+ *                     type: string
+ *                     description: Description of the field
+ *                   # Add other properties here
+ *                   MonthYear:
+ *                     type: string
+ *                     format: date
+ *                     description: Date in "MMM YY" format
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message
+ */
+
 router.get('/', async (req, res) => {
   try {
     const { username, organization } = req.query;

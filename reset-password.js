@@ -3,6 +3,64 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const pool = require('./pool');
 
+/**
+ * @swagger
+ * /reset-password:
+ *   post:
+ *     tags: ['Portfolio']
+ *     summary: Reset user password
+ *     description: Reset the password for a user with the provided reset token.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               resetToken:
+ *                 type: string
+ *                 description: The reset token received by the user
+ *               newPassword:
+ *                 type: string
+ *                 description: The new password for the user
+ *             required:
+ *               - resetToken
+ *               - newPassword
+ *     responses:
+ *       '200':
+ *         description: Password reset successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Message indicating successful password reset
+ *       '400':
+ *         description: Invalid or expired reset token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message
+ *     security:
+ *       - apiKey: []
+ */
+
 router.post('/', async (req, res) => {
 
   const email = req.header('Email-ID');

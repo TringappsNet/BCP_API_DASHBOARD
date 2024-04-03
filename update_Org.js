@@ -1,9 +1,70 @@
-// Import necessary modules
+/**
+ * @swagger
+ * /update-Org:
+ *   put:
+ *     tags: ['Portfolio']
+ *     summary: Update organization name by ID
+ *     description: Updates the name of an organization by its ID.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               org_id:
+ *                 type: integer
+ *                 description: The ID of the organization to update.
+ *               new_org_name:
+ *                 type: string
+ *                 description: The new name for the organization.
+ *     responses:
+ *       '200':
+ *         description: Organization name updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message indicating that the organization name was updated.
+ *       '400':
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message indicating that the organization ID or new name is missing.
+ *       '404':
+ *         description: Organization not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message indicating that the organization was not found.
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message indicating an internal server error.
+ */
+
 const express = require('express');
 const router = express.Router();
-const pool = require('./pool'); // Assuming you have a pool configured for your database connection
+const pool = require('./pool');
 
-// Endpoint to update org_name
 router.put('/', async (req, res) => {
     const { org_id, new_org_name } = req.body;
 

@@ -1,3 +1,72 @@
+/**
+ * @swagger
+ * /validate-duplicates:
+ *   post:
+ *     tags: ['Portfolio']
+ *     summary: Validate duplicate data
+ *     description: Validates duplicate data for a given user and organization.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userData:
+ *                 type: object
+ *                 properties:
+ *                   username:
+ *                     type: string
+ *                     description: The username
+ *                   organization:
+ *                     type: string
+ *                     description: The organization name
+ *               data:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   description: Data to be validated
+ *     responses:
+ *       '200':
+ *         description: Successfully validated duplicates
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       isDuplicate:
+ *                         type: boolean
+ *                         description: Indicates whether the data is a duplicate or not
+ *                       rowId:
+ *                         type: integer
+ *                         description: The ID of the duplicate row, if it exists
+ *       '400':
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating the reason for the bad request
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating the internal server error
+ */
+
 const express = require('express');
 const router = express.Router();
 const pool = require('./pool');

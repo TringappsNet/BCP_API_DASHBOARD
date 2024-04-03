@@ -5,8 +5,7 @@ const session = require('express-session');
 const bcrypt = require('bcrypt');
 const pool = require('./pool');
 const app = express();
-const port = 3003;
-
+const port = 3001;
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -17,15 +16,16 @@ app.use(session({
   cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } 
 }));
 
-// Importing the forgot-password router
 const forgotPasswordRouter = require('./forgot-password');
 const sendInviteRouter = require('./send-invite');
 
-// Mounting the forgot-password router
 app.use('/forgot-password', forgotPasswordRouter);
 app.use('/send-invite', sendInviteRouter);
 
-// Your other routes
+// Import and use the Swagger setup
+require('./swagger')(app);
+
+// Your existing routes
 app.use('/login', require('./login'));
 app.use('/register', require('./register'));
 app.use('/logout', require('./logout'));
@@ -47,15 +47,6 @@ app.use('/delete-Org', require('./delete_Org'));
 app.use('/update-Org', require('./update_Org'));
 app.use('/user-Active', require('./UserActive'));
 app.use('/bulk-upload-update', require('./Bulk-Upload-Update'));
-
-
-
-
-
-
-
-
-
 
 // Start the server
 app.listen(port, () => {

@@ -1,9 +1,70 @@
-// Import necessary modules
+/**
+ * @swagger
+ * /users-Active:
+ *   put:
+ *     tags: ['Portfolio']
+ *     summary: Update user isActive status by email
+ *     description: Updates the isActive status of a user by their email.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: The email of the user to update.
+ *               isActive:
+ *                 type: boolean
+ *                 description: The new isActive status for the user.
+ *     responses:
+ *       '200':
+ *         description: User isActive status updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message indicating that the user's isActive status was updated.
+ *       '400':
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message indicating that the email or isActive parameter is missing.
+ *       '404':
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message indicating that the user was not found.
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message indicating an internal server error.
+ */
+
 const express = require('express');
 const router = express.Router();
-const pool = require('./pool'); // Assuming you have a pool configured for your database connection
+const pool = require('./pool');
 
-// Endpoint to update isActive column for a user by email
 router.put('/', async (req, res) => {
     const { email, isActive } = req.body;
 
