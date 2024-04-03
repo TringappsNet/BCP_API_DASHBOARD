@@ -14,7 +14,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
 
   // Validate headers
   const sessionId = req.header('Session-ID'); 
-  const emailHeader = req.header('Email');
+  const emailHeader = req.header('email');
   
   if (!sessionId || !emailHeader) {
     return res.status(400).json({ message: 'Session ID and Email headers are required!' });
