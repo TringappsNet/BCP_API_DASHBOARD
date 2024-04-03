@@ -3,8 +3,7 @@ const router = express.Router();
 const pool = require('./pool');
 const bodyParser = require('body-parser');
 const moment = require('moment');
-const columnMap = require('./Objects');
-const checkForDuplicates = require('./validate-duplicates');
+const {columnMap} = require('./Objects');
 
 router.post('/', bodyParser.json(), async (req, res) => {
   const sessionId = req.header('Session-ID');
@@ -14,13 +13,12 @@ router.post('/', bodyParser.json(), async (req, res) => {
     return res.status(400).json({ message: 'Session ID and Email headers are required!' });
   }
   
-  // You may want to validate sessionId against your session data in the database
+  const { userData, overrideExisting, newDatas } = req.body;
+  const { username, organization, email, roleID } = userData;
   
   if (email !== emailHeader) {
     return res.status(401).json({ message: 'Unauthorized: Email header does not match user data!' });
   }
-  const { userData, overrideExisting, newDatas } = req.body;
-  const { username, organization } = userData;
 
   if (!Array.isArray(newDatas) || !newDatas.every(item => typeof item === 'object')) {
     return res.status(400).json({ message: 'Invalid JSON body format for new data' });
@@ -29,8 +27,15 @@ router.post('/', bodyParser.json(), async (req, res) => {
   try {
     const connection = await pool.getConnection();
     await connection.beginTransaction();
+    const [orgResult] = await connection.query('SELECT org_ID FROM organization WHERE org_name = ?', [organization]);
+    const orgID = orgResult[0] ? orgResult[0].org_ID : null;
 
-    const columns = ['Organization', 'UserName', ...Object.keys(newDatas[0]).map(key => columnMap[key])];
+    if (!orgID) {
+      throw new Error('Organization not found');
+    }
+
+    const columns = ['Org_ID', 'UserName', 'Role_ID', ...Object.keys(newDatas[0]).map(key => columnMap[key])];
+    console.log('Columns:', columns);
 
     const formatDateValue = (value, key) => {
       if (key === 'Month/Year') {
@@ -43,7 +48,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
     // Only insert new data if overrideExisting is null
     if (overrideExisting === null) {
       const insertPromises = newDatas.map(async row => {
-        const values = [organization, username, ...Object.values(row).map((value, index) => formatDateValue(value, Object.keys(row)[index]))];
+        const values = [orgID, username, roleID, ...Object.values(row).map((value, index) => formatDateValue(value, Object.keys(row)[index]))];
         console.log('Inserting new record:', row);
         const insertQuery = `INSERT INTO Portfolio_Companies_format (${columns.join(', ')}) VALUES (?)`;
         await connection.query(insertQuery, [values]);
@@ -56,13 +61,13 @@ router.post('/', bodyParser.json(), async (req, res) => {
         for (let i = 1; i < overrideExisting.length; i++) {
           const row = overrideExisting[i];
           const rowId = overrideExisting[0].id; // Extract the ID from the first object
-          const values = [organization, username, ...Object.values(row).map((value, index) => formatDateValue(value, Object.keys(row)[index]))];
+          const values = [roleID, ...Object.values(row).map((value, index) => formatDateValue(value, Object.keys(row)[index]))];
           console.log('Updating existing record with ID:', rowId, row);
           const updateQuery = `UPDATE Portfolio_Companies_format SET ${columns.slice(2).map((col, index) => `${col} = ?${index === columns.slice(2).length - 1 ? '' : ','}`).join(' ')} WHERE ID = ?`;
           console.log('Update query:', updateQuery);
 
           const updatePromise = new Promise((resolve, reject) => {
-            connection.query(updateQuery, [...values.slice(2), rowId], (error, results) => {
+            connection.query(updateQuery, [...values, rowId], (error, results) => {
               if (error) {
                 reject(error);
               } else {
@@ -72,7 +77,6 @@ router.post('/', bodyParser.json(), async (req, res) => {
           
           });
           
-
   updatePromises.push(updatePromise);
 
   updatePromise.then(result => {
@@ -83,14 +87,14 @@ router.post('/', bodyParser.json(), async (req, res) => {
     console.log('Status: error');
   });
 
-  console.log('Update values:', [...values.slice(2), rowId]);
+  console.log('Update values:', [...values, rowId]);
 }
 
 await Promise.all(updatePromises);
 
       // Insert new rows
       const insertPromises = newDatas.map(async row => {
-        const values = [organization, username, ...Object.values(row).map((value, index) => formatDateValue(value, Object.keys(row)[index]))];
+        const values = [orgID, username, roleID, ...Object.values(row).map((value, index) => formatDateValue(value, Object.keys(row)[index]))];
         console.log('Inserting new record:', row);
         const insertQuery = `INSERT INTO Portfolio_Companies_format (${columns.join(', ')}) VALUES (?)`;
         await connection.query(insertQuery, [values]);
