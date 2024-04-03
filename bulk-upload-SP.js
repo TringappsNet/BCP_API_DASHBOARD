@@ -5,6 +5,8 @@ const bodyParser = require('body-parser');
 const moment = require('moment');
 const { columnMap } = require('./Objects');
 
+// Import the stored procedure name
+const BULK_INSERT_PROCEDURE = 'Bulk_Insert';
 
 router.post('/', bodyParser.json(), async (req, res) => {
   const { userData, data } = req.body; 
@@ -27,7 +29,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
   }
 
   try {
-    const connection = await pool.getConnection();
+    const connection = await pool.getConnection(); // Get connection from the pool
     await connection.beginTransaction();
 
     // Fetch Org_ID corresponding to the organization name
@@ -38,16 +40,21 @@ router.post('/', bodyParser.json(), async (req, res) => {
       throw new Error('Organization not found');
     }
 
-    const insertPromises = data.map(row => {
+    // Convert data object to arrays of columns and values
+    const insertPromises = data.map(async row => {
       const values = [orgID, username, roleID, ...Object.values(row).map(value => typeof value === 'string' ? value.replace(/ /g, '') : value)];
       const columns = ['Org_ID', 'UserName', 'Role_ID', ...Object.keys(row).map(key => columnMap[key])];
     
-      const placeholders = values.map(() => '?').join(', '); 
-      const query1 = 'INSERT INTO Portfolio_Companies_format (' + columns.join(', ') + ') VALUES (' + placeholders + ')'; // Combine columns and placeholders
-      return connection.query(query1, values); 
-    }); 
+      // Convert arrays to JSON strings
+      const columnsJSON = JSON.stringify(columns);
+      const valuesJSON = JSON.stringify(values);
+
+      // Call the stored procedure
+      await connection.query(`CALL ${BULK_INSERT_PROCEDURE}(?, ?, ?, ?, ?)`, [orgID, username, roleID, columnsJSON, valuesJSON]);
+    });
     
     await Promise.all(insertPromises);
+
     await connection.commit();
     connection.release();
 
@@ -58,8 +65,4 @@ router.post('/', bodyParser.json(), async (req, res) => {
   }
 });
 
-
-
-
-  
 module.exports = router;
