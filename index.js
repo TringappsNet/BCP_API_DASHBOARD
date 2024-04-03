@@ -43,6 +43,10 @@ app.use('/Updateuser', require('./UpdateUsers'));
 app.use('/DeleteUser', require('./DeleteUser'));
 app.use('/Get-Org', require('./Get-Org'));
 app.use('/Get-Role', require('./Get_Role'));
+app.use('/delete-Org', require('./delete_Org'));
+app.use('/update-Org', require('./update_Org'));
+app.use('/user-Active', require('./UserActive'));
+
 
 
 
