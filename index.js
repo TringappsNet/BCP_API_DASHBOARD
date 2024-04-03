@@ -5,7 +5,7 @@ const session = require('express-session');
 const bcrypt = require('bcrypt');
 const pool = require('./pool');
 const app = express();
-const port = 3003;
+const port = 3001;
 
 
 app.use(bodyParser.json());
