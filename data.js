@@ -11,9 +11,10 @@ router.get('/', async (req, res) => {
     const organizationId = !isNaN(organization) ? parseInt(organization) : null;
 
     // Call the stored procedure GetPortfolioData
-    const [rows] = await pool.query('CALL GetPortfolioData(?, ?)', [username, organizationId]);
+    const [result] = await pool.query('CALL GetPortfolioData(?, ?)', [username, organizationId]);
+    const rows = result[0]; // Extracting the actual data from the ResultSet
 
-    // Log the data received from the database
+    // Log the data received from the database (without ResultSetHeader)
     console.log("Data fetched from the database:", rows);
 
     const data = rows.map(row => {
