@@ -87,7 +87,7 @@ const { columnMap } = require('./Objects');
 
 router.post('/', bodyParser.json(), async (req, res) => {
   const { userData, data } = req.body; 
-  const { username, organization, email, roleID } = userData; // Add roleID to the destructured object
+  const { username, orgID, email, roleID } = userData; // Add roleID to the destructured object
 
   // Validate headers
   const sessionId = req.header('Session-ID'); 
@@ -110,12 +110,12 @@ router.post('/', bodyParser.json(), async (req, res) => {
     await connection.beginTransaction();
 
     // Fetch Org_ID corresponding to the organization name
-    const [orgResult] = await connection.query('SELECT org_ID FROM organization WHERE org_name = ?', [organization]);
-    const orgID = orgResult[0] ? orgResult[0].org_ID : null;
+    // const [orgResult] = await connection.query('SELECT org_ID FROM organization WHERE org_name = ?', [organization]);
+    // const orgID = orgResult[0] ? orgResult[0].org_ID : null;
 
-    if (!orgID) {
-      throw new Error('Organization not found');
-    }
+    // if (!orgID) {
+    //   throw new Error('Organization not found');
+    // }
 
     const insertPromises = data.map(row => {
       const values = [orgID, username, roleID, ...Object.values(row).map(value => typeof value === 'string' ? value.replace(/ /g, '') : value)];
