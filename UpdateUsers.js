@@ -86,9 +86,10 @@ router.post('/', async (req, res) => {
   try {
     const { email, Role } = req.body;
 
-    if (email !== emailHeader) {
-      return res.status(401).json({ message: 'Unauthorized: Email header does not match user data!' });
-    }
+    // if (email !== emailHeader) {
+    //   return res.status(401).json({ message: 'Unauthorized: Email header does not match user data!' });
+    // }
+    
     // Check if email, role, and organization are provided
     if (!email || !Role) {
       return res.status(400).json({ error: 'Email, Role, and Organization are required in the request body' });
