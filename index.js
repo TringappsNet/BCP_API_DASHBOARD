@@ -7,6 +7,7 @@ const pool = require('./pool');
 const app = express();
 const port = 3001;
 
+
 app.use(bodyParser.json());
 app.use(cors());
 app.use(session({
@@ -47,6 +48,8 @@ app.use('/delete-Org', require('./delete_Org'));
 app.use('/update-Org', require('./update_Org'));
 app.use('/user-Active', require('./UserActive'));
 app.use('/bulk-upload-update', require('./Bulk-Upload-Update'));
+app.use('/Audit', require('./Audit'));
+
 
 // Start the server
 app.listen(port, () => {

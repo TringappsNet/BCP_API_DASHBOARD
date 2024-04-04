@@ -117,7 +117,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
     await pool.query('CALL RegisterUser(?, ?, ?, ?, ?, ?)', [token, firstName, lastName, phoneNo, passwordHash, salt]);
 
     // Remove the token from the database
-    await pool.query('UPDATE users SET InviteToken = NULL WHERE InviteToken = ?', [token]);
+    await pool.query('UPDATE users SET InviteToken = NULL, isActive = 1 WHERE InviteToken = ?', [token]);
 
     console.log("User registered or updated successfully!");
    

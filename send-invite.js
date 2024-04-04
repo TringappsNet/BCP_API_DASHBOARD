@@ -65,11 +65,20 @@ const SMTP_PASS = process.env.SMTP_PASS;
  *                   type: string
  *                   description: Error message indicating an internal server error.
  */
+
+
+
 router.post('/', async (req, res) => {
   const { email, role, organization } = req.body;
   const userName = extractUserName(email);
   
   try {
+    // Check if email already exists in the users table
+    const existingUser = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+    if (existingUser.length > 2) {
+      return res.status(400).json({ message: 'Email already exists' });
+    }
+
     // Get organization ID from the organization table
     const orgResult = await pool.query('SELECT org_ID FROM organization WHERE org_name = ?', [organization]);
     if (orgResult.length === 0) {
@@ -100,6 +109,7 @@ router.post('/', async (req, res) => {
     return res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 
 // Function to extract username from email
 function extractUserName(email) {
