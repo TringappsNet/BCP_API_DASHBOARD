@@ -64,6 +64,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('./pool');
+const { columnMap } = require('./Objects');
 
 router.post('/', async (req, res) => {
   const sessionId = req.header('Session-ID');
@@ -79,7 +80,7 @@ router.post('/', async (req, res) => {
   if (email !== emailHeader) {
     return res.status(401).json({ message: 'Unauthorized: Email header does not match user data!' });
   }
-  const { ids } = req.body;
+  const { ids, Org_Id, userId } = req.body;
 
   if (!Array.isArray(ids) || !ids.every(id => typeof id === 'string')) {
     return res.status(400).json({ message: 'Invalid JSON body format' });
@@ -89,16 +90,34 @@ router.post('/', async (req, res) => {
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
-    const deletePromises = ids.map(id => {
+    const deletePromises = ids.map(async id => {
+      const [deletedRow] = await connection.query('SELECT * FROM Portfolio_Companies_format WHERE id = ?', [id]);
       const query = 'DELETE FROM Portfolio_Companies_format WHERE id = ?';
-      return connection.query(query, [id]);
+      await connection.query(query, [id]);
+
+      // Construct audit log values
+      const { ID, UserName, Role_ID, Org_ID, ...modifiedDeletedRow } = deletedRow[0];
+      const auditLogValues = {
+          Org_Id:Org_Id,
+          ModifiedBy: userId,
+          UserAction: 'Delete',
+          ...Object.entries(modifiedDeletedRow).reduce((acc, [key, value]) => {
+              const columnName = columnMap[key] || key;
+              acc[columnName] = value;
+              return acc;
+          }, {})
+      };
+
+
+      // Insert audit log
+      await connection.query('INSERT INTO Portfolio_Audit SET ?', auditLogValues);
     });
 
     await Promise.all(deletePromises);
     await connection.commit();
     connection.release();
 
-    res.status(200).json({ message: 'Rows deleted successfully' });
+    res.status(200).json({ message: 'Row deleted successfully' });
   } catch (error) {
     console.error('Error deleting rows:', error);
     res.status(500).json({ message: 'Error deleting rows' });

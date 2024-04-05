@@ -87,7 +87,7 @@ const { columnMap } = require('./Objects');
 
 router.post('/', bodyParser.json(), async (req, res) => {
   const { userData, data } = req.body; 
-  const { username, orgID, email, roleID } = userData; // Add roleID to the destructured object
+  const { username, orgID, email, roleID, userId } = userData; // Add roleID to the destructured object
 
   // Validate headers
   const sessionId = req.header('Session-ID'); 
@@ -117,14 +117,30 @@ router.post('/', bodyParser.json(), async (req, res) => {
     //   throw new Error('Organization not found');
     // }
 
-    const insertPromises = data.map(row => {
-      const values = [orgID, username, roleID, ...Object.values(row).map(value => typeof value === 'string' ? value.replace(/ /g, '') : value)];
+    const insertPromises = [];
+    for (const row of data) {
+
+    const values = [orgID, username, roleID, ...Object.values(row).map(value => typeof value === 'string' ? value.replace(/ /g, '') : value)];
       const columns = ['Org_ID', 'UserName', 'Role_ID', ...Object.keys(row).map(key => columnMap[key])];
     
       const placeholders = values.map(() => '?').join(', '); 
       const query1 = 'INSERT INTO Portfolio_Companies_format (' + columns.join(', ') + ') VALUES (' + placeholders + ')'; // Combine columns and placeholders
-      return connection.query(query1, values); 
-    }); 
+      await connection.query(query1, values); 
+
+
+      const auditLogValues = {
+        Org_Id: orgID,
+        ModifiedBy: userId,
+        UserAction: 'Insert',
+        ...Object.entries(row).reduce((acc, [key, value]) => {
+          const columnName = columnMap[key] || key;
+          acc[columnName] = value;
+          return acc;
+      }, {})
+      };
+      
+    insertPromises.push(connection.query('INSERT INTO Portfolio_Audit SET ?', auditLogValues));
+  }
     
     await Promise.all(insertPromises);
     await connection.commit();

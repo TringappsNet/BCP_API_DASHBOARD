@@ -67,6 +67,8 @@ const router = express.Router();
 const pool = require('./pool');
 const bodyParser = require('body-parser');
 const updatedRow = require('./middlewares/updated-row');
+const { columnMap } = require('./Objects');
+
 
 router.use(bodyParser.json());
 
@@ -74,6 +76,9 @@ router.post('/', updatedRow, async (req, res) => {
   const sessionId = req.header('Session-ID');
   const emailHeader = req.header('email');
   const email=req.body.email;
+  const userId=req.body.userId;
+  const Org_ID=req.body.Org_ID;
+
   if (!sessionId || !emailHeader) {
     return res.status(400).json({ message: 'Session ID and Email headers are required!' });
   }
@@ -117,6 +122,20 @@ router.post('/', updatedRow, async (req, res) => {
     const [result] = await pool.query(query, values);
 
     if (result.affectedRows > 0) {
+      const { ID, ...auditLogValuesWithoutID } = editedRow;
+      const auditLogValues = {
+        Org_Id: Org_ID,
+        ModifiedBy: userId,
+        UserAction: 'Update',
+        ...Object.entries(auditLogValuesWithoutID).reduce((acc, [key, value]) => {
+          const columnName = columnMap[key] || key;
+          acc[columnName] = value;
+          return acc;
+        }, {})
+      };
+      // Insert audit log
+      await pool.query('INSERT INTO Portfolio_Audit SET ?', auditLogValues);
+
       res.status(200).json({ message: 'Row updated successfully' });
     } else {
       res.status(200).json({ message: 'No changes made to the row' });
