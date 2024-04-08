@@ -15,8 +15,8 @@ router.post("/", bodyParser.json(), async (req, res) => {
       .json({ message: "Session ID and Email headers are required!" });
   }
 
-  const { userData, newDatas } = req.body;
-  const { username, organization, email, roleID } = userData;
+  const { userData, data } = req.body;
+  const { username, orgID, email, roleID, userId } = userData; 
 
   if (email !== emailHeader) {
     return res.status(401).json({
@@ -25,8 +25,8 @@ router.post("/", bodyParser.json(), async (req, res) => {
   }
 
   if (
-    !Array.isArray(newDatas) ||
-    !newDatas.every((item) => typeof item === "object")
+    !Array.isArray(data) ||
+    !data.every((item) => typeof item === "object")
   ) {
     return res
       .status(400)
@@ -37,29 +37,30 @@ router.post("/", bodyParser.json(), async (req, res) => {
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
-    const [orgResult] = await connection.query(
-      "SELECT org_ID FROM organization WHERE org_name = ?",
-      [organization]
-    );
-    console.log(organization);
-    const orgID = orgResult[0] ? orgResult[0].org_ID : null;
-    console.log(orgID);
-    if (!orgID) {
-      throw new Error("Organization not found");
-    }
+    // const [orgResult] = await connection.query(
+    //   "SELECT org_ID FROM organization WHERE org_name = ?",
+    //   [organization]
+    // );
+    // console.log(organization);
+    // const orgID = orgResult[0] ? orgResult[0].org_ID : null;
+    // console.log(orgID);
+    // if (!orgID) {
+    //   throw new Error("Organization not found");
+    // }
 
     const formatDateValue = (value, key) => {
       if (key === "Month/Year") {
         const dateParts = value.split("-");
-        return `${dateParts[0]}-${dateParts[1]}`;
+        return `${dateParts[0]}-${dateParts[1]}-01`;
       }
       return value;
     };
+    
     console.log(formatDateValue);
     const updateValues = [];
     const insertValues = [];
 
-    for (const newData of newDatas) {
+    for (const newData of data) {
       const [existingRows] = await connection.query(
         "SELECT * FROM Portfolio_Companies_format WHERE MonthYear = ? AND Org_ID = ?",
         [formatDateValue(newData["MonthYear"]), orgID]
