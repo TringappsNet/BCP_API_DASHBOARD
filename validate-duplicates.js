@@ -70,63 +70,43 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('./pool');
-const columnMap = require('./Objects');
 
 router.post('/', async (req, res) => {
     const { userData, data } = req.body;
-    const { username, organization } = userData;
-  
+    const { userId, Org_ID } = userData;
+
     if (!Array.isArray(data) || !data.every(item => typeof item === 'object')) {
       return res.status(400).json({ message: 'Invalid JSON body format' });
     }
   
-    console.log('userData:', userData);
-    console.log('data :', data);
-  
     try {
-      const connection = await pool.getConnection();
+      const connection = await pool.getConnection();  
       const duplicatePromises = data.map(async row => {
-        const keys = Object.keys(row);
-        console.log('keys :', keys);
-  
-        const mappedKeys = ['Organization', 'UserName', ...Object.keys(row).map(key => columnMap[key])];
-        console.log('mappedKeys :', mappedKeys);
-  
-        const mappedValues = [organization, username, ...Object.values(row)
-            .map((value) => (keys[mappedKeys.indexOf('Month/Year')] === 'Month/Year')
-              ? value.replace(/ /g, '') : value
-            )
-          ];        
-          
-        console.log('mappedValues :', mappedValues);
-  
-        const monthYearValue = mappedValues[mappedKeys.indexOf('MonthYear')];
-  
-        const query = 'SELECT COUNT(*) as count FROM Portfolio_Companies_format WHERE UserName = ? AND Organization = ? AND MonthYear = ?';
-        const result = await connection.query(query, [username, organization, monthYearValue]);
+      const keys = Object.keys(row);  
+      const mappedKeys = ['Org_ID', 'UserID', ...keys];
+      const mappedValues = [Org_ID, userId, ...Object.values(row)]; 
+      const monthYearValue = mappedValues[mappedKeys.indexOf('MonthYear')];
+      const companyName = row['CompanyName'];
+      const query = 'SELECT COUNT(*) as count FROM Portfolio_Companies_format WHERE CompanyName = ? AND MonthYear = ?';
+      const result = await connection.query(query, [companyName, monthYearValue]);
+      const isDuplicate = result[0][0].count > 0;
 
-        console.log(result);
+      return {
+        isDuplicate: isDuplicate,
+        rowId: result[0][0].id || null,
+      };
+    });
 
-        console.log(`Month/Year: ${monthYearValue}`);
+    const results = await Promise.all(duplicatePromises);
+    const hasDuplicates = results.some(result => result.isDuplicate); 
+    res.status(200).json({ data:results, hasDuplicates }); 
+    connection.release();
 
-        const isDuplicate = result[0][0].count > 0;
-        console.log(`isDuplicate ${isDuplicate}`);
+        } catch (error) {
+          console.error('Error validating duplicates:', error);
+          res.status(500).json({ message: 'Error validating duplicates' });
+        }
+    });
 
-        
-        return {
-          isDuplicate: isDuplicate,
-          rowId: result[0][0].id || null,
-
-        };
-      });
-  
-      const results = await Promise.all(duplicatePromises);
-      res.status(200).json({ data: results });
-      connection.release();
-    } catch (error) {
-      console.error('Error validating duplicates:', error);
-      res.status(500).json({ message: 'Error validating duplicates' });
-    }
-  });
-  
 module.exports = router;
+

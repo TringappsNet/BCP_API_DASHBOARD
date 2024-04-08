@@ -3,7 +3,6 @@ const router = express.Router();
 const pool = require("./pool");
 const bodyParser = require("body-parser");
 const moment = require("moment");
-const { columnMap } = require("./Objects");
 
 router.post("/", bodyParser.json(), async (req, res) => {
   const sessionId = req.header("Session-ID");
@@ -37,35 +36,30 @@ router.post("/", bodyParser.json(), async (req, res) => {
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
-    // const [orgResult] = await connection.query(
-    //   "SELECT org_ID FROM organization WHERE org_name = ?",
-    //   [organization]
-    // );
-    // console.log(organization);
-    // const orgID = orgResult[0] ? orgResult[0].org_ID : null;
-    // console.log(orgID);
-    // if (!orgID) {
-    //   throw new Error("Organization not found");
-    // }
-
-    const formatDateValue = (value, key) => {
-      if (key === "Month/Year") {
-        const dateParts = value.split("-");
-        return `${dateParts[0]}-${dateParts[1]}-01`;
-      }
-      return value;
-    };
+     const [orgResult] = await connection.query(
+      "SELECT org_name FROM organization WHERE org_ID = ?",
+      [orgID]
+    );    
+    if (roleID !== '1' && data.some(item => item.CompanyName.toLowerCase().replace(/\s/g, '') !== orgResult[0].org_name.toLowerCase().trim().replace(/\s/g, ''))) {
+      return res.status(403).json({
+        message: "You don't have permission to upload from this Organization",
+      });
+    }
     
-    console.log(formatDateValue);
+    
     const updateValues = [];
     const insertValues = [];
 
     for (const newData of data) {
-      const [existingRows] = await connection.query(
-        "SELECT * FROM Portfolio_Companies_format WHERE MonthYear = ? AND Org_ID = ?",
-        [formatDateValue(newData["MonthYear"]), orgID]
+      const monthYear = newData["MonthYear"].toLowerCase().replace(/\s/g, '');
+      const companyName = newData["CompanyName"].toLowerCase().replace(/\s/g, '');
+   
+      const [existingRows] = await connection.  query(
+        "SELECT * FROM Portfolio_Companies_format WHERE MonthYear = ? AND CompanyName = ?",
+        [monthYear, companyName]
+        
       );
-
+    
       if (existingRows.length > 0) {
         // Update existing row
         const updateValue = {
@@ -84,6 +78,7 @@ router.post("/", bodyParser.json(), async (req, res) => {
         insertValues.push(insertValue);
       }
     }
+    
 
     // Bulk update
     if (updateValues.length > 0) {
@@ -100,7 +95,7 @@ router.post("/", bodyParser.json(), async (req, res) => {
       const batchSize = 100; // Adjust batch size as needed
       for (let i = 0; i < insertValues.length; i += batchSize) {
         const batch = insertValues.slice(i, i + batchSize);
-        const columns = Object.keys(batch[0]); // Assuming all objects in the batch have the same keys
+        const columns = Object.keys(batch[0]); 
         const placeholders = batch
           .map(() => `(${columns.map(() => "?").join(",")})`)
           .join(",");
