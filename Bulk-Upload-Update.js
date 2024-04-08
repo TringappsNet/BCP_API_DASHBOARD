@@ -1,110 +1,124 @@
-  const express = require('express');
-  const router = express.Router();
-  const pool = require('./pool');
-  const bodyParser = require('body-parser');
-  const moment = require('moment');
-  const { columnMap } = require('./Objects');
+const express = require("express");
+const router = express.Router();
+const pool = require("./pool");
+const bodyParser = require("body-parser");
+const moment = require("moment");
+const { columnMap } = require("./Objects");
 
-  router.post('/', bodyParser.json(), async (req, res) => {
-    const sessionId = req.header('Session-ID');
-    const emailHeader = req.header('Email');
+router.post("/", bodyParser.json(), async (req, res) => {
+  const sessionId = req.header("Session-ID");
+  const emailHeader = req.header("Email");
 
-    if (!sessionId || !emailHeader) {
-      return res.status(400).json({ message: 'Session ID and Email headers are required!' });
-    }
+  if (!sessionId || !emailHeader) {
+    return res
+      .status(400)
+      .json({ message: "Session ID and Email headers are required!" });
+  }
 
-    const { userData, overrideExisting, newDatas } = req.body;
-    const { username, organization, email, roleID } = userData;
+  const { userData, newDatas } = req.body;
+  const { username, organization, email, roleID } = userData;
 
-    if (email !== emailHeader) {
-      return res.status(401).json({ message: 'Unauthorized: Email header does not match user data!' });
-    }
-
-    if (!Array.isArray(newDatas) || !newDatas.every(item => typeof item === 'object')) {
-      return res.status(400).json({ message: 'Invalid JSON body format for new data' });
-    }
-
-
-      try {
-        const connection = await pool.getConnection();
-        await connection.beginTransaction();
-
-      const [orgResult] = await connection.query('SELECT org_ID FROM organization WHERE org_name = ?', [organization]);
-      const orgID = orgResult[0] ? orgResult[0].org_ID : null;
-
-      if (!orgID) {
-        throw new Error('Organization not found');
-      }
-
-      const columns = ['Org_ID', 'UserName', 'Role_ID', ...Object.keys(newDatas[0]).map(key => columnMap[key])];
-
-      const formatDateValue = (value, key) => {
-        if (key === 'Month/Year') {
-          const dateParts = value.split('-');
-          return `${dateParts[0]}-${dateParts[1]}-01 00:00:00`;
-        }
-        return value;
-      };
-
-      // Only insert new data if overrideExisting is null
-      if (overrideExisting === null) {
-        const insertPromises = newDatas.map(async row => {
-          const values = [orgID, username, roleID, ...Object.values(row).map((value, index) => formatDateValue(value, Object.keys(row)[index]))];
-          console.log('Inserting new record:', row);
-          const insertQuery = `INSERT INTO Portfolio_Companies_format (${columns.join(', ')}) VALUES (?)`;
-          await connection.query(insertQuery, [values]);
-          console.log('Inserted:', values);
-        });
-        await Promise.all(insertPromises);
-      } else {
-
-        // Update existing rows
-        const updatePromises = overrideExisting.map(async (row, index) => {
-          if (index === 0) {
-            return; 
-          }
-          const rowId = overrideExisting[0].id;
-      const values = [roleID, ...Object.values(row).map((value, index) => formatDateValue(value, Object.keys(row)[index]))];
-      console.log('Updating existing record with ID:', rowId, row);
-      const updateQuery = `UPDATE Portfolio_Companies_format SET ${columns.slice(2).map((col, index) => `${col} = ?${index === columns.slice(2).length - 1 ? '' : ','}`).join(' ')} WHERE ID = ?`;
-      console.log('Update query:', updateQuery);
-      console.log('Update values:', [...values, rowId]);
-        
-      return new Promise((resolve, reject) => {
-        connection.query(updateQuery, [...values, rowId], (error, results) => {
-          if (error) {
-            console.error('Update error:', error);
-            reject(error);
-          } else {
-            console.log('Update result:', results);
-            console.log('Status: updated');
-            resolve(results);
-          }
-        });
-      });
+  if (email !== emailHeader) {
+    return res.status(401).json({
+      message: "Unauthorized: Email header does not match user data!",
     });
+  }
 
-    await Promise.all(updatePromises);
-        // Insert new rows
-        const insertPromises = newDatas.map(async row => {
-          const values = [orgID, username, roleID, ...Object.values(row).map((value, index) => formatDateValue(value, Object.keys(row)[index]))];
-          console.log('Inserting new record:', row);
-          const insertQuery = `INSERT INTO Portfolio_Companies_format (${columns.join(', ')}) VALUES (?)`;
-          await connection.query(insertQuery, [values]);
-          console.log('Inserted:', values);
-        });
+  if (
+    !Array.isArray(newDatas) ||
+    !newDatas.every((item) => typeof item === "object")
+  ) {
+    return res
+      .status(400)
+      .json({ message: "Invalid JSON body format for new data" });
+  }
 
-        await Promise.all(insertPromises);
-      }
+  try {
+    const connection = await pool.getConnection();
+    await connection.beginTransaction();
 
-      await connection.commit();
-      connection.release();
-
-      res.status(200).json({ message: 'Data uploaded successfully' });
-    } catch (error) {
-      console.error('Error inserting/updating data:', error);
-      res.status(500).json({ message: 'Error inserting/updating data' });
+    const [orgResult] = await connection.query(
+      "SELECT org_ID FROM organization WHERE org_name = ?",
+      [organization]
+    );
+    console.log(organization);
+    const orgID = orgResult[0] ? orgResult[0].org_ID : null;
+    console.log(orgID);
+    if (!orgID) {
+      throw new Error("Organization not found");
     }
-  });
 
-  module.exports = router;
+    const formatDateValue = (value, key) => {
+      if (key === "Month/Year") {
+        const dateParts = value.split("-");
+        return `${dateParts[0]}-${dateParts[1]}`;
+      }
+      return value;
+    };
+    console.log(formatDateValue);
+    const updateValues = [];
+    const insertValues = [];
+
+    for (const newData of newDatas) {
+      const [existingRows] = await connection.query(
+        "SELECT * FROM Portfolio_Companies_format WHERE MonthYear = ? AND Org_ID = ?",
+        [formatDateValue(newData["MonthYear"]), orgID]
+      );
+
+      if (existingRows.length > 0) {
+        // Update existing row
+        const updateValue = {
+          ...newData,
+          ID: existingRows[0].ID,
+        };
+        updateValues.push(updateValue);
+      } else {
+        // Insert new row
+        const insertValue = {
+          Org_ID: orgID,
+          UserName: username,
+          Role_ID: roleID,
+          ...newData,
+        };
+        insertValues.push(insertValue);
+      }
+    }
+
+    // Bulk update
+    if (updateValues.length > 0) {
+      const updateQuery =
+        "UPDATE Portfolio_Companies_format SET ? WHERE ID = ?";
+      for (const updateValue of updateValues) {
+        await connection.query(updateQuery, [updateValue, updateValue.ID]);
+      }
+      console.log("Update Completed");
+    }
+
+    // Bulk insert
+    if (insertValues.length > 0) {
+      const batchSize = 100; // Adjust batch size as needed
+      for (let i = 0; i < insertValues.length; i += batchSize) {
+        const batch = insertValues.slice(i, i + batchSize);
+        const columns = Object.keys(batch[0]); // Assuming all objects in the batch have the same keys
+        const placeholders = batch
+          .map(() => `(${columns.map(() => "?").join(",")})`)
+          .join(",");
+        const values = batch.flatMap((item) => columns.map((col) => item[col]));
+        const insertQuery = `INSERT INTO Portfolio_Companies_format (${columns.join(
+          ", "
+        )}) VALUES ${placeholders}`;
+        await connection.query(insertQuery, values);
+      }
+    }
+
+    await connection.commit();
+    connection.release();
+
+    res.status(200).json({ message: "Data uploaded successfully" });
+  } catch (error) {
+    console.error("Error inserting/updating data:", error);
+    res.status(500).json({ message: "Error inserting/updating data" });
+  }
+});
+
+module.exports = router;
