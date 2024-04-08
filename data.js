@@ -62,11 +62,7 @@ router.get('/', async (req, res) => {
 
     // Call the stored procedure GetPortfolioData
     const [result] = await pool.query('CALL GetPortfolioData(?, ?)', [username, organizationId]);
-    const rows = result[0]; // Extracting the actual data from the ResultSet
-
-    // Log the data received from the database (without ResultSetHeader)
-    console.log(rows[0]);
-
+    const rows = result[0]; 
     const data = rows.map(row => {
       const newRow = {};
       Object.keys(row).forEach(key => {

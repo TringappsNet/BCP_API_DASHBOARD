@@ -32,7 +32,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
     const connection = await pool.getConnection(); // Get connection from the pool
     await connection.beginTransaction();
 
-    // Fetch Org_ID corresponding to the organization name
+    // Fetch Org_ID corresponding to the organiz  ation name
     const [orgResult] = await connection.query('SELECT org_ID FROM organization WHERE org_name = ?', [organization]);
     const orgID = orgResult[0] ? orgResult[0].org_ID : null;
 

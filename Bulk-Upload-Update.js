@@ -54,7 +54,7 @@ router.post("/", bodyParser.json(), async (req, res) => {
       const monthYear = newData["MonthYear"].toLowerCase().replace(/\s/g, '');
       const companyName = newData["CompanyName"].toLowerCase().replace(/\s/g, '');
    
-      const [existingRows] = await connection.query(
+      const [existingRows] = await connection.  query(
         "SELECT * FROM Portfolio_Companies_format WHERE MonthYear = ? AND CompanyName = ?",
         [monthYear, companyName]
         
@@ -95,7 +95,7 @@ router.post("/", bodyParser.json(), async (req, res) => {
       const batchSize = 100; // Adjust batch size as needed
       for (let i = 0; i < insertValues.length; i += batchSize) {
         const batch = insertValues.slice(i, i + batchSize);
-        const columns = Object.keys(batch[0]); // Assuming all objects in the batch have the same keys
+        const columns = Object.keys(batch[0]); 
         const placeholders = batch
           .map(() => `(${columns.map(() => "?").join(",")})`)
           .join(",");
