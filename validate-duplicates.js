@@ -74,43 +74,30 @@ const columnMap = require('./Objects');
 
 router.post('/', async (req, res) => {
     const { userData, data } = req.body;
-    const { username, organization } = userData;
-  
+    const { userId, Org_ID } = userData;
+
     if (!Array.isArray(data) || !data.every(item => typeof item === 'object')) {
       return res.status(400).json({ message: 'Invalid JSON body format' });
     }
   
-    console.log('userData:', userData);
-    console.log('data :', data);
   
     try {
       const connection = await pool.getConnection();
       const duplicatePromises = data.map(async row => {
-        const keys = Object.keys(row);
-        console.log('keys :', keys);
-  
-        const mappedKeys = ['Organization', 'UserName', ...Object.keys(row).map(key => columnMap[key])];
-        console.log('mappedKeys :', mappedKeys);
-  
-        const mappedValues = [organization, username, ...Object.values(row)
+        const keys = Object.keys(row);  
+        const mappedKeys = ['Org_ID', 'UserID', ...Object.keys(row).map(key => columnMap[key])];
+        const mappedValues = [Org_ID, userId, ...Object.values(row)
             .map((value) => (keys[mappedKeys.indexOf('Month/Year')] === 'Month/Year')
               ? value.replace(/ /g, '') : value
             )
           ];        
           
-        console.log('mappedValues :', mappedValues);
   
         const monthYearValue = mappedValues[mappedKeys.indexOf('MonthYear')];
   
-        const query = 'SELECT COUNT(*) as count FROM Portfolio_Companies_format WHERE UserName = ? AND Organization = ? AND MonthYear = ?';
-        const result = await connection.query(query, [username, organization, monthYearValue]);
-
-        console.log(result);
-
-        console.log(`Month/Year: ${monthYearValue}`);
-
+        const query = 'SELECT COUNT(*) as count FROM Portfolio_Companies_format WHERE UserID = ? AND Org_ID = ? AND MonthYear = ?';
+        const result = await connection.query(query, [userId, Org_ID, monthYearValue]);
         const isDuplicate = result[0][0].count > 0;
-        console.log(`isDuplicate ${isDuplicate}`);
 
         
         return {

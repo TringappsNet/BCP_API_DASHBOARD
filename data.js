@@ -65,7 +65,7 @@ router.get('/', async (req, res) => {
     const rows = result[0]; // Extracting the actual data from the ResultSet
 
     // Log the data received from the database (without ResultSetHeader)
-    console.log("Data fetched from the database:", rows);
+    console.log(rows[0]);
 
     const data = rows.map(row => {
       const newRow = {};
