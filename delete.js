@@ -95,10 +95,9 @@ router.post('/', async (req, res) => {
       const query = 'DELETE FROM Portfolio_Companies_format WHERE id = ?';
       await connection.query(query, [id]);
 
-      // Construct audit log values
-      const { ID, UserName, Role_ID, Org_ID, ...modifiedDeletedRow } = deletedRow[0];
+      const { ID, UserName, Role_ID, Org_ID, UserID, ...modifiedDeletedRow } = deletedRow[0];
       const auditLogValues = {
-          Org_Id:Org_Id,
+          Org_Id: Org_Id,
           ModifiedBy: userId,
           UserAction: 'Delete',
           ...Object.entries(modifiedDeletedRow).reduce((acc, [key, value]) => {
