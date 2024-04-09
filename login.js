@@ -106,9 +106,10 @@ router.post('/', async (req, res) => {
 
         // Retrieve user information from the database including organization name
         const [rows] = await pool.query(`
-            SELECT u.*, o.org_name AS OrganizationName
+            SELECT u.*, o.org_name AS OrganizationName, r.role AS roleName
             FROM users u
             LEFT JOIN organization o ON u.Org_ID = o.org_ID
+            LEFT JOIN role r ON u.Role_ID = r.role_ID
             WHERE Email = ?`, [email]);
         
         // Check if the user exists
@@ -118,6 +119,7 @@ router.post('/', async (req, res) => {
             if (isValidPassword) {
                 // Generate session details
                 const sessionId = req.sessionID;
+                const role = user.roleName;
                 const userId = user.UserID;
                 const UserName = user.UserName;
                 const Organization = user.OrganizationName;
@@ -143,8 +145,8 @@ router.post('/', async (req, res) => {
                     sessionId: sessionId,
                     Organization: Organization,
                     Role_ID: Role_ID,
-                    Org_ID:Org_ID
-
+                    Org_ID:Org_ID,
+                    role:role
                 });
             } else {
                 // Invalid password
