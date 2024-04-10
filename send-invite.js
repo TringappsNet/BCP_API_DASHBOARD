@@ -106,7 +106,7 @@ router.post('/', async (req, res) => {
     return res.status(200).json({ message: 'Invitation sent successfully' });
   } catch (error) {
     console.error('Error sending invitation:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Enter a valid Email' });
   }
 });
 
