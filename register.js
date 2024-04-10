@@ -104,7 +104,6 @@ router.post('/', bodyParser.json(), async (req, res) => {
     const salt = await bcrypt.genSalt();
     // Generate password hash with the generated salt
     const passwordHash = await bcrypt.hash(password, salt);
-
     // Check if the user exists
     const selectUserQuery = 'SELECT * FROM users WHERE InviteToken = ?';
     const [userRows] = await pool.query(selectUserQuery, [token]);
