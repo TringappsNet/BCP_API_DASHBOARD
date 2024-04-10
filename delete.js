@@ -91,32 +91,36 @@ router.post('/', async (req, res) => {
     await connection.beginTransaction();
 
     const deletePromises = ids.map(async id => {
-      const [deletedRow] = await connection.query('SELECT * FROM Portfolio_Companies_format WHERE id = ?', [id]);
-      const query = 'DELETE FROM Portfolio_Companies_format WHERE id = ?';
-      await connection.query(query, [id]);
+      try {
+        const [deletedRow] = await connection.query('SELECT * FROM Portfolio_Companies_format WHERE id = ?', [id]);
+        const query = 'DELETE FROM Portfolio_Companies_format WHERE id = ?';
+        await connection.query(query, [id]);
 
-      const { ID, UserName, Role_ID, Org_ID, UserID, ...modifiedDeletedRow } = deletedRow[0];
-      const auditLogValues = {
-          Org_Id: Org_Id,
-          ModifiedBy: userId,
-          UserAction: 'Delete',
-          ...Object.entries(modifiedDeletedRow).reduce((acc, [key, value]) => {
-              const columnName = columnMap[key] || key;
-              acc[columnName] = value;
-              return acc;
-          }, {})
-      };
+        const { ID, UserName, Role_ID, Org_ID, UserID, ...modifiedDeletedRow } = deletedRow[0];
+        const auditLogValues = {
+            Org_Id: Org_Id,
+            ModifiedBy: userId,
+            UserAction: 'Delete',
+            ...Object.entries(modifiedDeletedRow).reduce((acc, [key, value]) => {
+                const columnName = columnMap[key] || key;
+                acc[columnName] = value;
+                return acc;
+            }, {})
+        };
 
-
-      // Insert audit log
-      await connection.query('INSERT INTO Portfolio_Audit SET ?', auditLogValues);
+        // Insert audit log
+        await connection.query('INSERT INTO Portfolio_Audit SET ?', auditLogValues);
+      } catch (error) {
+        console.error('Error deleting row:', error);
+        // You can choose to throw the error or handle it according to your application's requirements
+      }
     });
 
     await Promise.all(deletePromises);
     await connection.commit();
     connection.release();
 
-    res.status(200).json({ message: 'Row deleted successfully' });
+    res.status(200).json({ message: 'Rows deleted successfully' });
   } catch (error) {
     console.error('Error deleting rows:', error);
     res.status(500).json({ message: 'Error deleting rows' });
