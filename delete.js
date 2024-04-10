@@ -93,6 +93,11 @@ router.post('/', async (req, res) => {
     const deletePromises = ids.map(async id => {
       try {
         const [deletedRow] = await connection.query('SELECT * FROM Portfolio_Companies_format WHERE id = ?', [id]);
+        
+        if (!deletedRow || !deletedRow.length) {
+          return;
+        }
+
         const query = 'DELETE FROM Portfolio_Companies_format WHERE id = ?';
         await connection.query(query, [id]);
 
