@@ -113,7 +113,7 @@ router.post("/", bodyParser.json(), async (req, res) => {
     res.status(200).json({ message: "Data uploaded successfully" });
   } catch (error) {
     console.error("Error inserting/updating data:", error);
-    res.status(500).json({ message: "Error inserting/updating data" });
+    res.status(500).json({ message: "Unsupported Excel Format" });
   }
 });
 
