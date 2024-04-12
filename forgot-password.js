@@ -125,8 +125,8 @@ async function sendResetLink(email, resetToken) {
         pass: SMTP_PASS
       }
     });
-    //const resetLink = `http://192.168.1.129:3002/reset-password?token=${encodeURIComponent(resetToken)}`;
-    const resetLink = `http://192.168.1.50:3000/reset-password?token=${encodeURIComponent(resetToken)}`;
+    const resetLink = `http://192.168.1.129:3002/reset-password?token=${encodeURIComponent(resetToken)}`;
+    //const resetLink = `http://192.168.1.50:3000/reset-password?token=${encodeURIComponent(resetToken)}`;
 
     const mailOptions = {
       from: 'sender@example.com',
