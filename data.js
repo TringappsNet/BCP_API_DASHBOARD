@@ -1,8 +1,3 @@
-const express = require('express');
-const router = express.Router();
-const pool = require('./pool');
-const columnMap = require('./Objects');
-
 /**
  * @swagger
  * /data:
@@ -53,21 +48,20 @@ const columnMap = require('./Objects');
  *                   description: Error message
  */
 
+const express = require('express');
+const router = express.Router();
+const pool = require('./pool');
+
 router.get('/', async (req, res) => {
   try {
     const { username, organization } = req.query;
 
-    const organization_name = organization.toLowerCase().trim().replace(/\s/g, '')
+    const organization_name = organization.toLowerCase().trim().replace(/\s/g, '');
     // Call the stored procedure GetPortfolioData
     const [result] = await pool.query('CALL GetPortfolioData(?, ?)', [username, organization_name]);
     const rows = result[0]; 
     const data = rows.map(row => {
-      const newRow = {};
-      Object.keys(row).forEach(key => {
-        const newKey = columnMap[key] || key; 
-        newRow[newKey] = row[key]; 
-      });
-      return newRow;
+      return row;
     });
     res.status(200).json(data);
   } catch (error) {
