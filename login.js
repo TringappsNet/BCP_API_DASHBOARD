@@ -116,6 +116,12 @@ router.post('/', async (req, res) => {
         if (rows.length > 0) {
             const user = rows[0];
             const isValidPassword = await bcrypt.compare(password, user.PasswordHash);
+            const isActive = user.isActive;
+
+            if(isActive === 0){
+                return res.status(400).json({ error: 'User Not Active' });
+            }
+            
             if (isValidPassword) {
                 // Generate session details
                 const sessionId = req.sessionID;
@@ -124,7 +130,7 @@ router.post('/', async (req, res) => {
                 const UserName = user.UserName;
                 const Organization = user.OrganizationName;
                 const Role_ID = user.Role_ID; 
-                const Org_ID=user.Org_ID;
+                const Org_ID = user.Org_ID;
                 const createdAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
                 const expiration = new Date(Date.now() + 10 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
                 await pool.query('UPDATE users SET CurrentSessionID = ?, LastLoginTime = ? WHERE Email = ?', [sessionId, createdAt, email]);
@@ -136,6 +142,7 @@ router.post('/', async (req, res) => {
                     maxAge: 10 * 60 * 1000
                 });
 
+                
                 // Respond with user information and session details
                 return res.status(200).json({
                     message: 'Logged In',
@@ -158,7 +165,7 @@ router.post('/', async (req, res) => {
         }
     } catch (error) {
         console.error("Error logging in user:", error);
-        return res.status(500).json({ error: 'Error logging in user' });
+        return res.status(500).json({ error: 'User Not Registered!' });
     }
 });
 
