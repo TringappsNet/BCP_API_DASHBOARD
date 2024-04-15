@@ -119,7 +119,7 @@ router.post('/', async (req, res) => {
             const isActive = user.isActive;
 
             if(isActive === 0){
-                return res.status(400).json({ error: 'User Not Active' });
+                return res.status(400).json({ error: 'User Inactive. Please contact the administrator for further assistance.' });
             }
             
             if (isValidPassword) {
