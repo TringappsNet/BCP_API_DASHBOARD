@@ -79,13 +79,14 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    console.log('Executing SQL query...');
     const [user] = await pool.query('SELECT * FROM users WHERE Email = ?', [email]);
     if (!user || user.length === 0) {
-      console.log('Email not found in database');
       return res.status(404).json({ message: 'Email not found' });
     }
-    console.log('User ID:', user[0].UserID);
+
+    if (!user || user[0].isActive === 0) {
+      return res.status(400).json({ message: 'User Inactive. Please contact the administrator for further assistance.' });
+    }
     const resetToken = generateResetToken(user[0].UserID);
     await updateResetToken(resetToken, user[0].UserID); 
     await sendResetLink(email, resetToken);
@@ -107,7 +108,6 @@ function generateResetToken(userId) {
 async function updateResetToken(resetToken, userId) {
   try {
     await pool.query('UPDATE users SET resetToken = ? WHERE UserID = ?', [resetToken, userId]);
-    console.log('Reset token updated in user table');
   } catch (err) {
     console.error('Error updating reset token in user table:', err);
     throw err;
@@ -135,7 +135,6 @@ async function sendResetLink(email, resetToken) {
       text: `To reset your password, click on the following link: ${resetLink}`
     };
     await transporter.sendMail(mailOptions);
-    console.log('Reset link email sent successfully');
   } catch (err) {
     console.error('Error sending reset link email:', err);
     throw err;
