@@ -86,11 +86,12 @@ router.post('/', async (req, res) => {
       const mappedKeys = ['Org_ID', 'UserID', ...keys];
       const mappedValues = [Org_ID, userId, ...Object.values(row)]; 
       const monthYearValue = mappedValues[mappedKeys.indexOf('MonthYear')];
+      const [yearValue, monthValue] = monthYearValue.split('-');
       const companyName = row['CompanyName'];
-      const query = 'SELECT COUNT(*) as count FROM Portfolio_Companies_format WHERE CompanyName = ? AND MonthYear = ?';
-      const result = await connection.query(query, [companyName, monthYearValue]);
+      const query = 'SELECT COUNT(*) as count FROM Portfolio_Companies_format WHERE CompanyName = ? AND YEAR(MonthYear) = ? AND MONTH(MonthYear) = ?';
+      const result = await connection.query(query, [companyName, yearValue, monthValue]);
       const isDuplicate = result[0][0].count > 0;
-
+    
       return {
         isDuplicate: isDuplicate,
         rowId: result[0][0].id || null,
