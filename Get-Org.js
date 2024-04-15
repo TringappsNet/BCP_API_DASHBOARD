@@ -41,7 +41,7 @@ const pool = require('./pool');
 router.get('/', async (req, res) => {
     try {
         // Query the database to retrieve all organization names
-        const [rows] = await pool.query('SELECT org_ID, org_name FROM organization');
+        const [rows] = await pool.query('SELECT o.org_ID, o.org_name, COUNT(u.UserID) AS user_count FROM organization o LEFT JOIN users u ON o.org_ID = u.Org_ID GROUP BY o.org_ID, o.org_name');
 
         // Send back the array of organization names
         res.status(200).json(rows);
