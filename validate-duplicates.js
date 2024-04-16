@@ -85,8 +85,9 @@ router.post('/', async (req, res) => {
       const keys = Object.keys(row);  
       const mappedKeys = ['Org_ID', 'UserID', ...keys];
       const mappedValues = [Org_ID, userId, ...Object.values(row)]; 
-      const monthYearValue = mappedValues[mappedKeys.indexOf('MonthYear')];
-      const [yearValue, monthValue] = monthYearValue.split('-');
+      const monthYearIndex = mappedKeys.indexOf('MonthYear');
+      const monthYearValue = monthYearIndex !== -1 ? mappedValues[monthYearIndex] : null;
+      const [yearValue, monthValue] = monthYearValue ? monthYearValue.split('-') : [null, null];      
       const companyName = row['CompanyName'];
       const query = 'SELECT COUNT(*) as count FROM Portfolio_Companies_format WHERE CompanyName = ? AND YEAR(MonthYear) = ? AND MONTH(MonthYear) = ?';
       const result = await connection.query(query, [companyName, yearValue, monthValue]);
