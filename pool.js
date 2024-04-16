@@ -4,7 +4,7 @@ const mysql = require('mysql2/promise');
 //   host: 'localhost',
 //   user: 'root',
 //   password: 'Jroot',
-//   database: 'BCP_Dashboard'
+//   database: 'BCP_Database'
 // };
 
 
