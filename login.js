@@ -157,11 +157,11 @@ router.post('/', async (req, res) => {
                 });
             } else {
                 // Invalid password
-                return res.status(401).json({ error: 'Invalid Password!' });
+                return res.status(401).json({ error: 'Invalid Credentials!' });
             }
         } else {
             // User not found
-            return res.status(400).json({ error: 'User Not Found!' });
+            return res.status(400).json({ error: 'Invalid Credentials!' });
         }
     } catch (error) {
         console.error("Error logging in user:", error);
