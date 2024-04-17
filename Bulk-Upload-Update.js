@@ -72,7 +72,7 @@ router.post("/", bodyParser.json(), async (req, res) => {
         const auditLogValuesUpdate = {
           Org_Id: orgID,
           ModifiedBy: userId,
-          UserAction: 'Update',
+          UserAction: 'Overridden',
           ...Object.entries(newData).reduce((acc, [key, value]) => {
             // const columnName = columnMap[key] || key;
             acc[key] = value;
