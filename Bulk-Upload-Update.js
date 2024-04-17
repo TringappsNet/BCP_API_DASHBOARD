@@ -49,6 +49,7 @@ router.post("/", bodyParser.json(), async (req, res) => {
     
     const updateValues = [];
     const insertValues = [];
+    const insertPromises = [];
 
     for (const newData of data) {
       const monthYear = newData["MonthYear"].toLowerCase().replace(/\s/g, '');
@@ -67,6 +68,18 @@ router.post("/", bodyParser.json(), async (req, res) => {
           ID: existingRows[0].ID,
         };
         updateValues.push(updateValue);
+
+        const auditLogValuesUpdate = {
+          Org_Id: orgID,
+          ModifiedBy: userId,
+          UserAction: 'Overridden',
+          ...Object.entries(newData).reduce((acc, [key, value]) => {
+            // const columnName = columnMap[key] || key;
+            acc[key] = value;
+            return acc;
+          }, {})
+        };
+        insertPromises.push(connection.query('INSERT INTO Portfolio_Audit SET ?', auditLogValuesUpdate));
       } else {
         // Insert new row
         const insertValue = {
@@ -76,6 +89,18 @@ router.post("/", bodyParser.json(), async (req, res) => {
           ...newData,
         };
         insertValues.push(insertValue);
+
+        const auditLogValuesInsert = {
+          Org_Id: orgID,
+          ModifiedBy: userId,
+          UserAction: 'Insert',
+          ...Object.entries(newData).reduce((acc, [key, value]) => {
+            // const columnName = columnMap[key] || key;
+            acc[key] = value;
+            return acc;
+          }, {})
+        };
+        insertPromises.push(connection.query('INSERT INTO Portfolio_Audit SET ?', auditLogValuesInsert));
       }
     }
     
@@ -107,6 +132,11 @@ router.post("/", bodyParser.json(), async (req, res) => {
       }
     }
 
+
+    
+    // Execute all insert promises
+    await Promise.all(insertPromises);
+  
     await connection.commit();
     connection.release();
 
