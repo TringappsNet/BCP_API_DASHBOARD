@@ -74,7 +74,6 @@ router.post("/", bodyParser.json(), async (req, res) => {
           ModifiedBy: userId,
           UserAction: 'Overridden',
           ...Object.entries(newData).reduce((acc, [key, value]) => {
-            // const columnName = columnMap[key] || key;
             acc[key] = value;
             return acc;
           }, {})
@@ -108,29 +107,22 @@ router.post("/", bodyParser.json(), async (req, res) => {
     // Bulk update
     if (updateValues.length > 0) {
       const updateQuery =
-        "UPDATE Portfolio_Companies_format SET ? WHERE ID = ?";
+        "UPDATE Portfolio_Companies_format SET ? WHERE ID = ?"; 
       for (const updateValue of updateValues) {
         await connection.query(updateQuery, [updateValue, updateValue.ID]);
       }
-      console.log("Update Completed");
     }
 
     // Bulk insert
-    if (insertValues.length > 0) {
-      const batchSize = 100; // Adjust batch size as needed
-      for (let i = 0; i < insertValues.length; i += batchSize) {
-        const batch = insertValues.slice(i, i + batchSize);
-        const columns = Object.keys(batch[0]); 
-        const placeholders = batch
-          .map(() => `(${columns.map(() => "?").join(",")})`)
-          .join(",");
-        const values = batch.flatMap((item) => columns.map((col) => item[col]));
-        const insertQuery = `INSERT INTO Portfolio_Companies_format (${columns.join(
-          ", "
-        )}) VALUES ${placeholders}`;
-        await connection.query(insertQuery, values);
-      }
-    }
+if (insertValues.length > 0) {
+  for (const insertValue of insertValues) {
+    const columns = Object.keys(insertValue);
+    const placeholders = columns.map(() => "?").join(", ");
+    const values = columns.map((col) => insertValue[col]);
+    const insertQuery = `INSERT INTO Portfolio_Companies_format (${columns.join(", ")}) VALUES (${placeholders})`;
+    await connection.query(insertQuery, values);
+  }
+}
 
 
     
