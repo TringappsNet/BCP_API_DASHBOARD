@@ -10,6 +10,19 @@ const pool = require('./pool');
  *     tags: ['Portfolio']
  *     summary: Reset user password
  *     description: Reset the password for a user with the provided reset token.
+ *     parameters:
+ *       - in: header
+ *         name: Email-ID
+ *         description: User's email address
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: header
+ *         name: Session-ID
+ *         description: User's session ID
+ *         required: true
+ *         schema:
+ *           type: string
  *     requestBody:
  *       required: true
  *       content:

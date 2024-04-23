@@ -5,6 +5,20 @@
  *     tags: ['Portfolio']
  *     summary: Validate duplicate data
  *     description: Validates duplicate data for a given user and organization.
+ *     parameters:
+ *       - in: header
+ *         name: Session-ID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The session ID of the user.
+ *       - in: header
+ *         name: Email
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: email
+ *         description: The email address of the user making the request.
  *     requestBody:
  *       required: true
  *       content:

@@ -15,6 +15,13 @@
  *               org_ID:
  *                 type: integer
  *                 description: The ID of the organization to be deleted.
+ *     parameters:
+ *       - in: body
+ *         name: org_ID
+ *         description: The ID of the organization to be deleted.
+ *         required: true
+ *         schema:
+ *           type: integer
  *     responses:
  *       '200':
  *         description: Organization deleted successfully

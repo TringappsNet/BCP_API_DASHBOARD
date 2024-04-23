@@ -6,6 +6,20 @@
  *     summary: Upload data
  *     description: |
  *       Uploads data to the database.
+ *     parameters:
+ *       - in: header
+ *         name: Session-ID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The session ID of the user.
+ *       - in: header
+ *         name: Email
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: email
+ *         description: The email address of the user uploading the data.
  *     requestBody:
  *       required: true
  *       content:
@@ -19,9 +33,9 @@
  *                   username:
  *                     type: string
  *                     description: The username of the user uploading the data.
- *                   organization:
- *                     type: string
- *                     description: The name of the organization.
+ *                   orgID:
+ *                     type: integer
+ *                     description: The ID of the organization.
  *                   email:
  *                     type: string
  *                     format: email
@@ -29,6 +43,9 @@
  *                   roleID:
  *                     type: integer
  *                     description: The role ID of the user uploading the data.
+ *                   userId:
+ *                     type: integer
+ *                     description: The user ID.
  *               data:
  *                 type: array
  *                 items:
@@ -77,6 +94,7 @@
  *                   type: string
  *                   description: Error message indicating an internal server error.
  */
+
 
 const express = require('express');
 const router = express.Router();

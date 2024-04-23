@@ -39,6 +39,35 @@ const bodyParser = require('body-parser');
  *               - lastName
  *               - phoneNo
  *               - password
+ *     parameters:
+ *       - in: "body"
+ *         name: "user"
+ *         description: "User information"
+ *         required: true
+ *         schema:
+ *           type: "object"
+ *           properties:
+ *             token:
+ *               type: "string"
+ *               description: "User's invite token"
+ *             firstName:
+ *               type: "string"
+ *               description: "User's first name"
+ *             lastName:
+ *               type: "string"
+ *               description: "User's last name"
+ *             phoneNo:
+ *               type: "string"
+ *               description: "User's phone number"
+ *             password:
+ *               type: "string"
+ *               description: "User's password"
+ *           required:
+ *             - token
+ *             - firstName
+ *             - lastName
+ *             - phoneNo
+ *             - password
  *     responses:
  *       '201':
  *         description: User registered or updated successfully

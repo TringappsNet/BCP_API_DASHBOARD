@@ -18,6 +18,19 @@
  *               isActive:
  *                 type: boolean
  *                 description: The new isActive status for the user.
+ *     parameters:
+ *       - in: body
+ *         name: email
+ *         description: The email of the user to update.
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: body
+ *         name: isActive
+ *         description: The new isActive status for the user.
+ *         required: true
+ *         schema:
+ *           type: boolean
  *     responses:
  *       '200':
  *         description: User isActive status updated successfully
