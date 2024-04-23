@@ -131,7 +131,7 @@ router.post('/', async (req, res) => {
             WHERE Email = ?`, [email]);
         
         // Check if the user exists
-        if (rows.length > 0) {x
+        if (rows.length > 0) {
             const user = rows[0];
             const isValidPassword = await bcrypt.compare(password, user.PasswordHash);
             const isActive = user.isActive;
