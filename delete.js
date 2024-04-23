@@ -6,6 +6,20 @@
  *     summary: Delete rows
  *     description: |
  *       Deletes rows from the database based on the provided IDs.
+ *     parameters:
+ *       - in: header
+ *         name: Session-ID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The session ID of the user.
+ *       - in: header
+ *         name: Email
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: email
+ *         description: The email address of the user making the request.
  *     requestBody:
  *       required: true
  *       content:
@@ -18,6 +32,12 @@
  *                 items:
  *                   type: string
  *                 description: An array of IDs of the rows to be deleted.
+ *               Org_Id:
+ *                 type: integer
+ *                 description: The ID of the organization.
+ *               userId:
+ *                 type: integer
+ *                 description: The ID of the user making the request.
  *     responses:
  *       '200':
  *         description: Rows deleted successfully

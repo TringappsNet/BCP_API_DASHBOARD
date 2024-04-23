@@ -4,6 +4,114 @@ const pool = require("./pool");
 const bodyParser = require("body-parser");
 const moment = require("moment");
 
+/**
+ * @swagger
+ * /bulk-upload-update:
+ *   post:
+ *     tags: ['Portfolio']
+ *     summary: Upload or update data
+ *     description: |
+ *       Uploads or updates data to the database.
+ *     parameters:
+ *       - in: header
+ *         name: Session-ID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The session ID of the user.
+ *       - in: header
+ *         name: Email
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: email
+ *         description: The email address of the user uploading the data.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userData:
+ *                 type: object
+ *                 properties:
+ *                   username:
+ *                     type: string
+ *                     description: The username of the user uploading the data.
+ *                   orgID:
+ *                     type: integer
+ *                     description: The ID of the organization.
+ *                   email:
+ *                     type: string
+ *                     format: email
+ *                     description: The email address of the user uploading the data.
+ *                   roleID:
+ *                     type: integer
+ *                     description: The role ID of the user uploading the data.
+ *                   userId:
+ *                     type: integer
+ *                     description: The user ID.
+ *               data:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   description: |
+ *                     An array of objects representing the data to be uploaded or updated. Each object represents a row of data to be inserted or updated in the database.
+ *     responses:
+ *       '200':
+ *         description: Data uploaded or updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message indicating that the data has been uploaded or updated successfully.
+ *       '400':
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating a bad request, such as missing or invalid input data.
+ *       '401':
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating unauthorized access due to mismatched email headers.
+ *       '403':
+ *         description: Forbidden
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating that the user does not have permission to upload data for the specified organization.
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message indicating an internal server error or unsupported Excel format.
+ */
+
+
 router.post("/", bodyParser.json(), async (req, res) => {
   const sessionId = req.header("Session-ID");
   const emailHeader = req.header("Email");

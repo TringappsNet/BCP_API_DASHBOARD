@@ -6,6 +6,20 @@
  *     summary: Update a row
  *     description: |
  *       Update a row in the database based on the provided data.
+ *     parameters:
+ *       - in: header
+ *         name: Session-ID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The session ID of the user.
+ *       - in: header
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: email
+ *         description: The email address of the user making the request.
  *     requestBody:
  *       required: true
  *       content:
@@ -16,6 +30,12 @@
  *               email:
  *                 type: string
  *                 description: The email of the user making the request.
+ *               userId:
+ *                 type: integer
+ *                 description: The ID of the user making the request.
+ *               Org_ID:
+ *                 type: integer
+ *                 description: The ID of the organization.
  *               editedRow:
  *                 type: object
  *                 description: The edited row data.
@@ -61,6 +81,7 @@
  *                   type: string
  *                   description: Error message indicating an internal server error.
  */
+
 
 const express = require('express');
 const router = express.Router();

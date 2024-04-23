@@ -5,19 +5,19 @@
  *     tags: ['Portfolio']
  *     summary: Update organization name by ID
  *     description: Updates the name of an organization by its ID.
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               org_id:
- *                 type: integer
- *                 description: The ID of the organization to update.
- *               new_org_name:
- *                 type: string
- *                 description: The new name for the organization.
+ *     parameters:
+ *       - in: body
+ *         name: org_id
+ *         description: The ID of the organization to update.
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: body
+ *         name: new_org_name
+ *         description: The new name for the organization.
+ *         required: true
+ *         schema:
+ *           type: string
  *     responses:
  *       '200':
  *         description: Organization name updated successfully

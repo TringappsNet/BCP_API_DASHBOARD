@@ -3,6 +3,10 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const pool = require('./pool');
 const { emailRegex } = require('./Objects');
+const bodyParser = require('body-parser');
+
+const app = express();
+app.use(bodyParser.json());
 
 /**
  * @swagger
@@ -28,6 +32,20 @@ const { emailRegex } = require('./Objects');
  *             required:
  *               - email
  *               - password
+ *     parameters:
+ *       - in: body
+ *         name: email
+ *         description: User's email address
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: email   
+ *       - in: body
+ *         name: password
+ *         description: User's password
+ *         required: true
+ *         schema:
+ *           type: string
  *     responses:
  *       '200':
  *         description: Logged in successfully
