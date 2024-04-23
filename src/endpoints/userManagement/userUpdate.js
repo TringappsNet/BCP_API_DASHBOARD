@@ -86,7 +86,7 @@
 
 const express = require('express');
 const router = express.Router();
-const pool = require('./pool');
+const pool = require('../../utils/pool');
 
 router.post('/', async (req, res) => {
   const sessionId = req.header('Session-ID');

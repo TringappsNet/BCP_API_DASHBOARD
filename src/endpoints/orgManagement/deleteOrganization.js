@@ -67,7 +67,7 @@
 
 const express = require('express');
 const router = express.Router();
-const pool = require('./pool');
+const pool = require('../../utils/pool');
 
 router.delete('/', async (req, res) => {
     const { org_ID } = req.body;

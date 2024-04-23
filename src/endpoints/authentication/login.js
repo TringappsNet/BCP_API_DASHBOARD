@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const pool = require('./pool');
-const { emailRegex } = require('./Objects');
+const pool = require('../../utils/pool');
+const { emailRegex } = require('../../utils/Objects');
 const bodyParser = require('body-parser');
 
 const app = express();

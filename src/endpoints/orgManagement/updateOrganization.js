@@ -63,7 +63,7 @@
 
 const express = require('express');
 const router = express.Router();
-const pool = require('./pool');
+const pool = require('../../utils/pool');
 
 router.put('/', async (req, res) => {
     const { org_id, new_org_name } = req.body;

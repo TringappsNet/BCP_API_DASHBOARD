@@ -85,10 +85,10 @@
 
 const express = require('express');
 const router = express.Router();
-const pool = require('./pool');
+const pool = require('../../utils/pool');
 const bodyParser = require('body-parser');
-const updatedRow = require('./middlewares/updated-row');
-const { columnMap } = require('./Objects');
+const updatedRow = require('../../utils/updated-row');
+const { columnMap } = require('../../utils/Objects');
 
 
 router.use(bodyParser.json());

@@ -35,7 +35,7 @@
 
 const express = require('express');
 const router = express.Router();
-const pool = require('./pool');
+const pool = require('../../utils/pool');
 
 // GET endpoint to retrieve all organization names
 router.get('/', async (req, res) => {

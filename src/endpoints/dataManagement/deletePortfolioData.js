@@ -83,8 +83,8 @@
 
 const express = require('express');
 const router = express.Router();
-const pool = require('./pool');
-const { columnMap } = require('./Objects');
+const pool = require('../../utils/pool');
+const { columnMap } = require('../../utils/Objects');
 
 router.post('/', async (req, res) => {
   const sessionId = req.header('Session-ID');

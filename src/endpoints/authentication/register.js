@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const pool = require('./pool');
+const pool = require('../../utils/pool');
 const bodyParser = require('body-parser');
 
 /**

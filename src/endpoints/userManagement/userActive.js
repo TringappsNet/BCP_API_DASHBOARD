@@ -76,7 +76,7 @@
 
 const express = require('express');
 const router = express.Router();
-const pool = require('./pool');
+const pool = require('../../utils/pool');
 
 router.put('/', async (req, res) => {
     const { email, isActive } = req.body;

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
-const pool = require('./pool');
+const pool = require('../../utils/pool');
 const crypto = require('crypto');
 require('dotenv').config();
 

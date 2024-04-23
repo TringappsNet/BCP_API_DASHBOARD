@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const pool = require("./pool");
+const pool = require("../../utils/pool");
 const bodyParser = require("body-parser");
 const moment = require("moment");
 

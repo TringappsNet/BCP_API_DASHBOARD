@@ -1,10 +1,10 @@
 /**
  * @swagger
- * /Deleteuser:
- *   delete:
+ * /create-org:
+ *   post:
  *     tags: ['Portfolio']
- *     summary: Delete user by UserID
- *     description: Deletes a user by their UserID.
+ *     summary: Create organization
+ *     description: Creates a new organization.
  *     parameters:
  *       - in: header
  *         name: Session-ID
@@ -17,6 +17,7 @@
  *         required: true
  *         schema:
  *           type: string
+ *           format: email
  *         description: The email address of the user making the request.
  *     requestBody:
  *       required: true
@@ -25,12 +26,12 @@
  *           schema:
  *             type: object
  *             properties:
- *               userID:
- *                 type: integer
- *                 description: The ID of the user to be deleted
+ *               org_name:
+ *                 type: string
+ *                 description: The name of the organization to be created
  *     responses:
- *       '200':
- *         description: User deleted successfully
+ *       '201':
+ *         description: Organization created successfully
  *         content:
  *           application/json:
  *             schema:
@@ -39,16 +40,9 @@
  *                 message:
  *                   type: string
  *                   description: Message indicating success
- *       '404':
- *         description: User not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   description: Error message indicating that the user was not found
+ *                 org_ID:
+ *                   type: integer
+ *                   description: The ID of the newly created organization
  *       '400':
  *         description: Bad request
  *         content:
@@ -73,31 +67,33 @@
 
 const express = require('express');
 const router = express.Router();
-const pool = require('./pool');
+const pool = require('../../utils/pool');
 
-// DELETE endpoint to delete a user by UserID
-router.delete('/', async (req, res) => {
+// POST endpoint to create organization
+router.post('/', async (req, res) => {
     try {
-        // Extract UserID from request body
-        const { userID } = req.body;
+        // Extract organization name from request body
+        const { org_name } = req.body;
 
-        // Check if userID is provided
-        if (!userID) {
-            return res.status(400).json({ error: 'UserID is required in the request body' });
+        // Check if organization name is provided
+        if (!org_name) {
+            return res.status(400).json({ error: 'Organization name is required' });
         }
 
-        // Call the stored procedure or SQL query to delete the user
-        const result = await pool.query('DELETE FROM users WHERE UserID = ?', [userID]);
-
-        // Check if the user was deleted successfully
-        if (result.affectedRows === 1) {
-            return res.status(200).json({ message: 'User deleted successfully' });
-        } else {
-            return res.status(404).json({ error: 'User not found' });
+        // Check if organization already exists
+        const [existingOrg] = await pool.query('SELECT * FROM organization WHERE org_name = ?', [org_name]);
+        if (existingOrg.length > 0) {
+            return res.status(400).json({ error: 'Organization already exists' });
         }
+
+        // Insert the organization into the database
+        const result = await pool.query('INSERT INTO organization (org_name) VALUES (?)', [org_name]);
+
+        // Send success response
+        res.status(201).json({ message: 'Organization created successfully', org_ID: result.insertId });
     } catch (error) {
-        console.error('Error deleting user:', error);
-        return res.status(500).json({ error: 'Error deleting user' });
+        console.error('Error creating organization:', error);
+        return res.status(500).json({ error: 'Error creating organization' });
     }
 });
 
