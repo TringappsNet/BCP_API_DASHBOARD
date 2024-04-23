@@ -85,6 +85,9 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../../utils/pool');
 const { columnMap } = require('../../utils/Objects');
+const {successMessages} = require('../../utils/successMessages');
+const {errorMessages} = require('../../utils/errorMessages');
+
 
 router.post('/', async (req, res) => {
   const sessionId = req.header('Session-ID');
@@ -92,18 +95,18 @@ router.post('/', async (req, res) => {
   const email = req.header('Email'); 
   
   if (!sessionId || !emailHeader || !email) {
-    return res.status(400).json({ message: 'Session ID and Email headers are required!' });
+    return res.status(400).json({ message: errorMessages.MISSING_HEADERS });
   }
   
   // You may want to validate sessionId against your session data in the database
   
   if (email !== emailHeader) {
-    return res.status(401).json({ message: 'Unauthorized: Email header does not match user data!' });
+    return res.status(401).json({ message: errorMessages.UNAUTHORIZED });
   }
   const { ids, Org_Id, userId } = req.body;
 
   if (!Array.isArray(ids) || !ids.every(id => typeof id === 'string')) {
-    return res.status(400).json({ message: 'Invalid JSON body format' });
+    return res.status(400).json({ message: errorMessages.INVALID_FORMAT });
   }
 
   try {
@@ -145,10 +148,10 @@ router.post('/', async (req, res) => {
     await connection.commit();
     connection.release();
 
-    res.status(200).json({ message: 'Rows deleted successfully' });
+    res.status(200).json({ message: successMessages.ROWS_DELETED });
   } catch (error) {
     console.error('Error deleting rows:', error);
-    res.status(500).json({ message: 'Error deleting rows' });
+    res.status(500).json({ message: errorMessages.DELETION_ERROR });
   }
 });
 

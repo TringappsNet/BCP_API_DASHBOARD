@@ -1,13 +1,3 @@
-const express = require('express');
-const router = express.Router();
-const nodemailer = require('nodemailer');
-const pool = require('../../utils/pool');
-const crypto = require('crypto');
-require('dotenv').config();
-
-const SMTP_USER = process.env.SMTP_USER;
-const SMTP_PASS = process.env.SMTP_PASS;
-
 /**
  * @swagger
  * /invitation:
@@ -67,6 +57,19 @@ const SMTP_PASS = process.env.SMTP_PASS;
  */
 
 
+const express = require('express');
+const router = express.Router();
+const nodemailer = require('nodemailer');
+const pool = require('../../utils/pool');
+const crypto = require('crypto');
+require('dotenv').config();
+const {successMessages} = require('../../utils/successMessages');
+const {errorMessages} = require('../../utils/errorMessages');
+
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
+
+
 
 router.post('/', async (req, res) => {
   const { email, role, organization } = req.body;
@@ -76,20 +79,20 @@ router.post('/', async (req, res) => {
     // Check if email already exists in the users table
     const existingUser = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
     if (existingUser[0].length > 0) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: errorMessages.USER_EXISTS });
     }
 
     // Get organization ID from the organization table
     const orgResult = await pool.query('SELECT org_ID FROM organization WHERE org_name = ?', [organization]);
     if (orgResult.length === 0) {
-      return res.status(400).json({ message: 'Organization not found' });
+      return res.status(400).json({ message: errorMessages.ORGANIZATION_NOT_FOUND });
     }
     const orgID = orgResult[0][0].org_ID;
 
     // Get role ID from the role table
     const roleResult = await pool.query('SELECT role_ID FROM role WHERE role = ?', [role]);
     if (roleResult.length === 0) {
-      return res.status(400).json({ message: 'Role not found' });
+      return res.status(400).json({ message: errorMessages.ROLE_NOT_FOUND });
     }
     const roleID = roleResult[0][0].role_ID;
 
@@ -103,10 +106,10 @@ router.post('/', async (req, res) => {
     await sendInvitationEmail(email, inviteToken, req.headers['Session-ID'], req.headers['Email']);
     
     // Return success response
-    return res.status(200).json({ message: 'Invitation sent successfully' });
+    return res.status(200).json({ message: successMessages.INVITATION_SENT });
   } catch (error) {
     console.error('Error sending invitation:', error);
-    return res.status(500).json({ message: 'Enter a valid Email' });
+    return res.status(500).json({ message: errorMessages.EMAIL_ERROR });
   }
 });
 
@@ -145,7 +148,6 @@ async function sendInvitationEmail(email, inviteToken, sessionId, userEmail) {
 
     // Send invitation email
     await transporter.sendMail(mailOptions);
-    console.log('Invitation email sent successfully');
   } catch (error) {
     console.error('Error sending invitation email:', error);
     throw error;

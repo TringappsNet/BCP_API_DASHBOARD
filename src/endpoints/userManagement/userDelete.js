@@ -74,8 +74,10 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../../utils/pool');
+const {successMessages} = require('../../utils/successMessages');
+const {errorMessages} = require('../../utils/errorMessages');
 
-// DELETE endpoint to delete a user by UserID
+
 router.delete('/', async (req, res) => {
     try {
         // Extract UserID from request body
@@ -83,7 +85,7 @@ router.delete('/', async (req, res) => {
 
         // Check if userID is provided
         if (!userID) {
-            return res.status(400).json({ error: 'UserID is required in the request body' });
+            return res.status(400).json({ error: errorMessages.MISSING_USERID });
         }
 
         // Call the stored procedure or SQL query to delete the user
@@ -91,13 +93,13 @@ router.delete('/', async (req, res) => {
 
         // Check if the user was deleted successfully
         if (result.affectedRows === 1) {
-            return res.status(200).json({ message: 'User deleted successfully' });
+            return res.status(200).json({ message: successMessages.USER_DELETED });
         } else {
-            return res.status(404).json({ error: 'User not found' });
+            return res.status(404).json({ error: errorMessages.USER_NOT_FOUND });
         }
     } catch (error) {
         console.error('Error deleting user:', error);
-        return res.status(500).json({ error: 'Error deleting user' });
+        return res.status(500).json({ error: errorMessages.ERROR_DELETING_USER });
     }
 });
 

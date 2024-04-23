@@ -39,6 +39,8 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../../utils/pool');
+const {successMessages} = require('../../utils/successMessages');
+const {errorMessages} = require('../../utils/errorMessages');
 
 // GET endpoint to retrieve all roles
 router.get('/', async (req, res) => {
@@ -51,7 +53,7 @@ router.get('/', async (req, res) => {
     } catch (error) {
         // If an error occurs, send a 500 Internal Server Error response
         console.error('Error retrieving roles:', error);
-        res.status(500).json({ error: 'Error retrieving roles' });
+        res.status(500).json({ error: errorMessages.RETRIEVAL_ERROR });
     }
 });
 

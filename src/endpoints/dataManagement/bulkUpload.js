@@ -1,9 +1,3 @@
-const express = require("express");
-const router = express.Router();
-const pool = require("../../utils/pool");
-const bodyParser = require("body-parser");
-const moment = require("moment");
-
 /**
  * @swagger
  * /bulk-upload-update:
@@ -111,49 +105,45 @@ const moment = require("moment");
  *                   description: Error message indicating an internal server error or unsupported Excel format.
  */
 
+const express = require("express");
+const router = express.Router();
+const pool = require("../../utils/pool");
+const bodyParser = require("body-parser");
+const moment = require("moment");
+const {successMessages} = require('../../utils/successMessages');
+const {errorMessages} = require('../../utils/errorMessages');
+
 
 router.post("/", bodyParser.json(), async (req, res) => {
   const sessionId = req.header("Session-ID");
   const emailHeader = req.header("Email");
 
   if (!sessionId || !emailHeader) {
-    return res
-      .status(400)
-      .json({ message: "Session ID and Email headers are required!" });
+    return res.status(400).json({ message: errorMessages.MISSING_HEADERS });
   }
 
   const { userData, data } = req.body;
   const { username, orgID, email, roleID, userId } = userData; 
 
   if (email !== emailHeader) {
-    return res.status(401).json({
-      message: "Unauthorized: Email header does not match user data!",
-    });
+    return res.status(401).json({ message: errorMessages.UNAUTHORIZED });
   }
 
-  if (
-    !Array.isArray(data) ||
-    !data.every((item) => typeof item === "object")
-  ) {
-    return res
-      .status(400)
-      .json({ message: "Invalid JSON body format for new data" });
+  if (!Array.isArray(data) || !data.every((item) => typeof item === "object")) {
+    return res.status(400).json({ message: errorMessages.INVALID_FORMAT });
   }
 
   try {
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
-     const [orgResult] = await connection.query(
+    const [orgResult] = await connection.query(
       "SELECT org_name FROM organization WHERE org_ID = ?",
       [orgID]
     );    
     if (roleID !== '1' && data.some(item => item.CompanyName.toLowerCase().replace(/\s/g, '') !== orgResult[0].org_name.toLowerCase().trim().replace(/\s/g, ''))) {
-      return res.status(403).json({
-        message: "You don't have permission to upload from this Organization",
-      });
+      return res.status(403).json({ message: errorMessages.PERMISSION_DENIED });
     }
-    
     
     const updateValues = [];
     const insertValues = [];
@@ -163,10 +153,9 @@ router.post("/", bodyParser.json(), async (req, res) => {
       const monthYear = newData["MonthYear"].toLowerCase().replace(/\s/g, '');
       const companyName = newData["CompanyName"].toLowerCase().replace(/\s/g, '');
    
-      const [existingRows] = await connection.  query(
+      const [existingRows] = await connection.query(
         "SELECT * FROM Portfolio_Companies_format WHERE MonthYear = ? AND CompanyName = ?",
         [monthYear, companyName]
-        
       );
     
       if (existingRows.length > 0) {
@@ -202,7 +191,6 @@ router.post("/", bodyParser.json(), async (req, res) => {
           ModifiedBy: userId,
           UserAction: 'Insert',
           ...Object.entries(newData).reduce((acc, [key, value]) => {
-            // const columnName = columnMap[key] || key;
             acc[key] = value;
             return acc;
           }, {})
@@ -211,39 +199,35 @@ router.post("/", bodyParser.json(), async (req, res) => {
       }
     }
     
-
     // Bulk update
     if (updateValues.length > 0) {
-      const updateQuery =
-        "UPDATE Portfolio_Companies_format SET ? WHERE ID = ?"; 
+      const updateQuery = "UPDATE Portfolio_Companies_format SET ? WHERE ID = ?"; 
       for (const updateValue of updateValues) {
         await connection.query(updateQuery, [updateValue, updateValue.ID]);
       }
     }
 
     // Bulk insert
-if (insertValues.length > 0) {
-  for (const insertValue of insertValues) {
-    const columns = Object.keys(insertValue);
-    const placeholders = columns.map(() => "?").join(", ");
-    const values = columns.map((col) => insertValue[col]);
-    const insertQuery = `INSERT INTO Portfolio_Companies_format (${columns.join(", ")}) VALUES (${placeholders})`;
-    await connection.query(insertQuery, values);
-  }
-}
+    if (insertValues.length > 0) {
+      for (const insertValue of insertValues) {
+        const columns = Object.keys(insertValue);
+        const placeholders = columns.map(() => "?").join(", ");
+        const values = columns.map((col) => insertValue[col]);
+        const insertQuery = `INSERT INTO Portfolio_Companies_format (${columns.join(", ")}) VALUES (${placeholders})`;
+        await connection.query(insertQuery, values);
+      }
+    }
 
-
-    
     // Execute all insert promises
     await Promise.all(insertPromises);
   
     await connection.commit();
     connection.release();
 
-    res.status(200).json({ message: "Data uploaded successfully" });
+    res.status(200).json({ message: successMessages.UPLOAD_SUCCESS });
   } catch (error) {
     console.error("Error inserting/updating data:", error);
-    res.status(500).json({ message: "Unsupported Excel Format" });
+    res.status(500).json({ message: errorMessages.INSERTION_ERROR });
   }
 });
 

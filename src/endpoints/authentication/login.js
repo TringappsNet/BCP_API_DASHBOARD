@@ -1,13 +1,3 @@
-const express = require('express');
-const router = express.Router();
-const bcrypt = require('bcrypt');
-const pool = require('../../utils/pool');
-const { emailRegex } = require('../../utils/Objects');
-const bodyParser = require('body-parser');
-
-const app = express();
-app.use(bodyParser.json());
-
 /**
  * @swagger
  * /login:
@@ -108,18 +98,32 @@ app.use(bodyParser.json());
  *                   description: Error message
  */
 
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcrypt');
+const pool = require('../../utils/pool');
+const { emailRegex } = require('../../utils/Objects');
+const bodyParser = require('body-parser');
+const {successMessages} = require('../../utils/successMessages');
+const {errorMessages} = require('../../utils/errorMessages');
+
+const app = express();
+app.use(bodyParser.json());
+
+
+
 router.post('/', async (req, res) => {
     const { email, password } = req.body;
-  
+
     try {
         // Check if email and password are provided
         if (!email || !password) {
-            return res.status(400).json({ error: 'Email and password are required!' });
+            return res.status(400).json({ error: errorMessages.MISSING_CREDENTIALS });
         }
 
         // Validate email format
         if (!emailRegex.test(email)) {
-            return res.status(400).json({ error: 'Please enter a valid email address!' });
+            return res.status(400).json({ error: errorMessages.INVALID_EMAIL });
         }
 
         // Retrieve user information from the database including organization name
@@ -129,17 +133,17 @@ router.post('/', async (req, res) => {
             LEFT JOIN organization o ON u.Org_ID = o.org_ID
             LEFT JOIN role r ON u.Role_ID = r.role_ID
             WHERE Email = ?`, [email]);
-        
+
         // Check if the user exists
         if (rows.length > 0) {
             const user = rows[0];
             const isValidPassword = await bcrypt.compare(password, user.PasswordHash);
             const isActive = user.isActive;
 
-            if(isActive === 0){
-                return res.status(400).json({ error: 'User Inactive. Please contact the administrator for further assistance.' });
+            if (isActive === 0) {
+                return res.status(400).json({ error: errorMessages.INACTIVE_USER });
             }
-            
+
             if (isValidPassword) {
                 // Generate session details
                 const sessionId = req.sessionID;
@@ -147,7 +151,7 @@ router.post('/', async (req, res) => {
                 const userId = user.UserID;
                 const UserName = user.UserName;
                 const Organization = user.OrganizationName;
-                const Role_ID = user.Role_ID; 
+                const Role_ID = user.Role_ID;
                 const Org_ID = user.Org_ID;
                 const createdAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
                 const expiration = new Date(Date.now() + 10 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
@@ -160,30 +164,29 @@ router.post('/', async (req, res) => {
                     maxAge: 10 * 60 * 1000
                 });
 
-                
                 // Respond with user information and session details
                 return res.status(200).json({
-                    message: 'Logged In',
+                    message: successMessages.LOGGED_IN,
                     UserName: UserName,
                     userId: userId,
                     email: email,
                     sessionId: sessionId,
                     Organization: Organization,
                     Role_ID: Role_ID,
-                    Org_ID:Org_ID,
-                    role:role
+                    Org_ID: Org_ID,
+                    role: role
                 });
             } else {
                 // Invalid password
-                return res.status(401).json({ error: 'Invalid Credentials!' });
+                return res.status(401).json({ error: errorMessages.INVALID_CREDENTIALS });
             }
         } else {
             // User not found
-            return res.status(400).json({ error: 'Invalid Credentials!' });
+            return res.status(400).json({ error: errorMessages.INVALID_CREDENTIALS });
         }
     } catch (error) {
         console.error("Error logging in user:", error);
-        return res.status(500).json({ error: 'User Not Registered!' });
+        return res.status(500).json({ error: errorMessages.USER_NOT_REGISTERED });
     }
 });
 

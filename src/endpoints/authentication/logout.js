@@ -1,7 +1,3 @@
-const express = require('express');
-const router = express.Router();
-const pool = require('../../utils/pool');
-
 /**
  * @swagger
  * /logout:
@@ -32,20 +28,29 @@ const pool = require('../../utils/pool');
  *                   description: Error message
  */
 
+
+const express = require('express');
+const router = express.Router();
+const pool = require('../../utils/pool');
+const {successMessages} = require('../../utils/successMessages');
+const {errorMessages} = require('../../utils/errorMessages');
+
+
+
 router.post('/', async (req, res) => {
     try {
         // Clear the session
         req.session.destroy((err) => {
             if (err) {
                 console.error("Error destroying session:", err);
-                return res.status(500).json({ error: 'Failed to logout!' });
+                return res.status(500).json({ error: errorMessages.LOGOUT_FAILED });
             } else {
-                return res.status(200).json({ message: 'Logged out successfully' });
+                return res.status(200).json({ message: successMessages.LOGGED_OUT });
             }
         });
     } catch (error) {
         console.error("Error logging out:", error);
-        return res.status(500).json({ error: 'Failed to logout!' });
+        return res.status(500).json({ error: errorMessages.LOGOUT_FAILED });
     }
 });
 

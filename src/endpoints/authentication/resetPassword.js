@@ -1,8 +1,3 @@
-const express = require('express');
-const router = express.Router();
-const bcrypt = require('bcrypt');
-const pool = require('../../utils/pool');
-
 /**
  * @swagger
  * /reset-password:
@@ -74,28 +69,32 @@ const pool = require('../../utils/pool');
  *       - apiKey: []
  */
 
-router.post('/', async (req, res) => {
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcrypt');
+const pool = require('../../utils/pool');
+const {successMessages} = require('../../utils/successMessages');
+const {errorMessages} = require('../../utils/errorMessages');
 
+
+
+router.post('/', async (req, res) => {
   const email = req.header('Email-ID');
   const sessionId = req.header('Session-ID');
 
   // Validate headers
   if (!email || !sessionId) {
-    return res.status(400).json({ message: 'Email-ID and Session-ID headers are required!' });
+    return res.status(400).json({ message: errorMessages.MISSING_HEADERS });
   }
+
   const { resetToken, newPassword } = req.body;
 
   try {
     const [user] = await pool.query('SELECT * FROM users WHERE resetToken = ?', [resetToken]);
 
     if (!user || user.length === 0) {
-      return res.status(400).json({ message: 'Invalid or expired reset token' });
+      return res.status(400).json({ message: errorMessages.INVALID_TOKEN });
     }
-
-    // Check if the reset token has expired
-    // if (user[0].resetTokenExpiry && new Date() > user[0].resetTokenExpiry) {
-    //   return res.status(400).json({ message: 'Reset token has expired' });
-    // }
 
     // Hash the new password
     const salt = await bcrypt.genSalt();
@@ -105,11 +104,11 @@ router.post('/', async (req, res) => {
     await pool.query('UPDATE users SET PasswordHash = ?, Salt = ?, resetToken = NULL, resetTokenExpiry = NULL WHERE resetToken = ?', [newPasswordHash, salt, resetToken]);
 
     // Respond with success message
-    return res.status(200).json({ message: 'Password reset successfully' });
+    return res.status(200).json({ message: successMessages.PASSWORD_RESET });
 
   } catch (error) {
     console.error('Error resetting password:', error);
-    return res.status(500).json({ message: 'Error resetting password' });
+    return res.status(500).json({ message: errorMessages.RESET_ERROR });
   }
 });
 

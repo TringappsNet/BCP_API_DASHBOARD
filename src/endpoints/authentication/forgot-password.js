@@ -66,79 +66,82 @@ const pool = require('../../utils/pool');
 const crypto = require('crypto');
 const { emailRegex } = require('../../utils/Objects');
 require('dotenv').config();
+const {successMessages} = require('../../utils/successMessages');
+const {errorMessages} = require('../../utils/errorMessages');
 
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 
+
 router.post('/', async (req, res) => {
-  const { email } = req.body;
+    const { email } = req.body;
 
-  // Validate email using regex
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({ message: 'Please provide a valid email address' });
-  }
-
-  try {
-    const [user] = await pool.query('SELECT * FROM users WHERE Email = ?', [email]);
-    if (!user || user.length === 0) {
-      return res.status(404).json({ message: 'Email not found' });
+    // Validate email using regex
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: errorMessages.INVALID_EMAIL });
     }
 
-    if (!user || user[0].isActive === 0) {
-      return res.status(400).json({ message: 'User Inactive. Please contact the administrator for further assistance.' });
+    try {
+        const [user] = await pool.query('SELECT * FROM users WHERE Email = ?', [email]);
+        if (!user || user.length === 0) {
+            return res.status(404).json({ message: errorMessages.EMAIL_NOT_FOUND });
+        }
+
+        if (!user || user[0].isActive === 0) {
+            return res.status(400).json({ message: errorMessages.USER_INACTIVE });
+        }
+        const resetToken = generateResetToken(user[0].UserID);
+        await updateResetToken(resetToken, user[0].UserID);
+        await sendResetLink(email, resetToken);
+        return res.status(200).json({ message: successMessages.RESET_LINK_SENT });
+    } catch (err) {
+        console.error('Error executing SQL query:', err);
+        return res.status(500).json({ message: errorMessages.INTERNAL_SERVER_ERROR });
     }
-    const resetToken = generateResetToken(user[0].UserID);
-    await updateResetToken(resetToken, user[0].UserID); 
-    await sendResetLink(email, resetToken);
-    return res.status(200).json({ message: 'Reset link sent successfully' });
-  } catch (err) {
-    console.error('Error executing SQL query:', err);
-    return res.status(500).json({ message: 'Internal server error' });
-  }
 });
 
 function generateResetToken(userId) {
-  // Generate a unique token
-  const token = userId.toString() + Math.random().toString(36).substr(2, 10);
-  // Hash the token using SHA-256
-  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-  return hashedToken;
+    // Generate a unique token
+    const token = userId.toString() + Math.random().toString(36).substr(2, 10);
+    // Hash the token using SHA-256
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    return hashedToken;
 }
 
 async function updateResetToken(resetToken, userId) {
-  try {
-    await pool.query('UPDATE users SET resetToken = ? WHERE UserID = ?', [resetToken, userId]);
-  } catch (err) {
-    console.error('Error updating reset token in user table:', err);
-    throw err;
-  }
+    try {
+        await pool.query('UPDATE users SET resetToken = ? WHERE UserID = ?', [resetToken, userId]);
+    } catch (err) {
+        console.error('Error updating reset token in user table:', err);
+        throw err;
+    }
 }
 
 async function sendResetLink(email, resetToken) {
-  try {
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: SMTP_USER,
-        pass: SMTP_PASS
-      }
-    });
-    const resetLink = `http://192.168.1.129:3002/reset-password?token=${encodeURIComponent(resetToken)}`;
-    //const resetLink = `http://192.168.1.50:3000/reset-password?token=${encodeURIComponent(resetToken)}`;
+    try {
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false,
+            auth: {
+                user: SMTP_USER,
+                pass: SMTP_PASS
+            }
+        });
+        const resetLink = `http://192.168.1.129:3002/reset-password?token=${encodeURIComponent(resetToken)}`;
+        //const resetLink = `http://192.168.1.50:3000/reset-password?token=${encodeURIComponent(resetToken)}`;
 
-    const mailOptions = {
-      from: 'sender@example.com',
-      to: email,
-      subject: 'Reset Your Password',
-      text: `To reset your password, click on the following link: ${resetLink}`
-    };
-    await transporter.sendMail(mailOptions);
-  } catch (err) {
-    console.error('Error sending reset link email:', err);
-    throw err;
-  }
+        const mailOptions = {
+            from: 'sender@example.com',
+            to: email,
+            subject: 'Reset Your Password',
+            text: `To reset your password, click on the following link: ${resetLink}`
+        };
+        await transporter.sendMail(mailOptions);
+    } catch (err) {
+        console.error('Error sending reset link email:', err);
+        throw err;
+    }
 }
 
 module.exports = router;

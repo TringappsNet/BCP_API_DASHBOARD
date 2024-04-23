@@ -61,7 +61,7 @@
  *                   type: string
  *                   description: Error message indicating a bad request, such as missing or invalid input data.
  *       '401':
- *         description: Unauthorized
+ *         description: UNAUTHORIZED
  *         content:
  *           application/json:
  *             schema:
@@ -69,7 +69,7 @@
  *               properties:
  *                 message:
  *                   type: string
- *                   description: Error message indicating unauthorized access due to mismatched email headers.
+ *                   description: Error message indicating UNAUTHORIZED access due to mismatched email headers.
  *       '500':
  *         description: Internal server error
  *         content:
@@ -87,12 +87,13 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../../utils/pool');
 const bodyParser = require('body-parser');
-const updatedRow = require('../../utils/updated-row');
+const updatedRow = require('../../middlewares/updated-row');
 const { columnMap } = require('../../utils/Objects');
+const {successMessages} = require('../../utils/successMessages');
+const {errorMessages} = require('../../utils/errorMessages');
 
 
 router.use(bodyParser.json());
-
 router.post('/', updatedRow, async (req, res) => {
   const sessionId = req.header('Session-ID');
   const emailHeader = req.header('email');
@@ -101,18 +102,18 @@ router.post('/', updatedRow, async (req, res) => {
   const Org_ID=req.body.Org_ID;
 
   if (!sessionId || !emailHeader) {
-    return res.status(400).json({ message: 'Session ID and Email headers are required!' });
+    return res.status(400).json({ message: errorMessages.MISSING_HEADERS });
   }
   
   // You may want to validate sessionId against your session data in the database
   
   if (email !== emailHeader) {
-    return res.status(401).json({ message: 'Unauthorized: Email header does not match user data!' });
+    return res.status(401).json({ message: errorMessages.UNAUTHORIZED });
   }
   const { editedRow } = req.body;
 
   if (!editedRow || !editedRow.ID) {
-    return res.status(400).json({ message: 'Invalid request or missing ID' });
+    return res.status(400).json({ message: errorMessages.INVALID_REQUEST });
   }
 
   try {
@@ -157,13 +158,13 @@ router.post('/', updatedRow, async (req, res) => {
       // Insert audit log
       await pool.query('INSERT INTO Portfolio_Audit SET ?', auditLogValues);
 
-      res.status(200).json({ message: 'Row updated successfully' });
+      res.status(200).json({ message: successMessages.ROW_UPDATED });
     } else {
-      res.status(200).json({ message: 'No changes made to the row' });
+      res.status(200).json({ message: successMessages.NO_CHANGES });
     }
   } catch (error) {
     console.error('Error updating row:', error);
-    res.status(500).json({ message: 'Error updating row' });
+    res.status(500).json({ message: errorMessages.UPDATE_ERROR });
   }
 });
 

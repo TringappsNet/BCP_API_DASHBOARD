@@ -17,7 +17,7 @@ app.use(session({
 
 
 // Import and use the Swagger setup
-require('./utils/swagger')(app);
+require('./swagger')(app);
 
 // Your existing routes
 app.use('/', require('./endpoints/misc/home'));

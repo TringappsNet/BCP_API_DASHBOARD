@@ -48,9 +48,14 @@
  *                   description: Error message
  */
 
+
 const express = require('express');
 const router = express.Router();
 const pool = require('../../utils/pool');
+const {successMessages} = require('../../utils/successMessages');
+const {errorMessages} = require('../../utils/errorMessages');
+
+
 
 router.get('/', async (req, res) => {
   try {
@@ -66,7 +71,7 @@ router.get('/', async (req, res) => {
     res.status(200).json(data);
   } catch (error) {
     console.error('Error retrieving data:', error);
-    res.status(500).json({ message: 'Error retrieving data' });
+    res.status(500).json({ message: errorMessages.RETRIEVAL_ERROR });
   }
 });
 

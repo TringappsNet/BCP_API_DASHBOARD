@@ -1,9 +1,3 @@
-const express = require('express');
-const router = express.Router();
-const bcrypt = require('bcrypt');
-const pool = require('../../utils/pool');
-const bodyParser = require('body-parser');
-
 /**
  * @swagger
  * /register:
@@ -111,21 +105,33 @@ const bodyParser = require('body-parser');
  *                   description: Error message
  */
 
+
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcrypt');
+const pool = require('../../utils/pool');
+const bodyParser = require('body-parser');
+const {successMessages} = require('../../utils/successMessages');
+const {errorMessages} = require('../../utils/errorMessages');
+
+
 router.post('/', bodyParser.json(), async (req, res) => {
   const { token, firstName, lastName, phoneNo, password } = req.body;
 
+  // Validate required fields
   if (!token || !firstName || !lastName || !phoneNo || !password) {
     return res.status(400).json({ errors: {
-        token: 'token is required',
-        firstName: 'First name is required',
-        lastName: 'Last name is required',
-        phoneNo: 'Phone number is required',  
-        password: 'Password is required'
+        token: errorMessages.TOKEN_REQUIRED,
+        firstName: errorMessages.FIRST_NAME_REQUIRED,
+        lastName: errorMessages.LAST_NAME_REQUIRED,
+        phoneNo: errorMessages.PHONE_NO_REQUIRED,  
+        password: errorMessages.PASSWORD_LENGTH
       }});
   }
 
+  // Validate password length
   if (password.length < 6) {
-    return res.status(400).json({ errors: { password: 'Password must be at least 6 characters long' } });
+    return res.status(400).json({ errors: { password: errorMessages.PASSWORD_LENGTH } });
   }
 
   try {
@@ -138,7 +144,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
     const [userRows] = await pool.query(selectUserQuery, [token]);
     
     if (userRows.length === 0) {
-      return res.status(404).json({ errors: { token: 'User not found' } });
+      return res.status(404).json({ errors: { token: errorMessages.USER_NOT_FOUND } });
     }
 
     // Call the stored procedure to update or insert user data, including the salt
@@ -149,10 +155,10 @@ router.post('/', bodyParser.json(), async (req, res) => {
 
     console.log("User registered or updated successfully!");
    
-    res.status(201).json({ message: 'User registered or updated successfully' });
+    res.status(201).json({ message: successMessages.USER_REGISTERED });
   } catch (error) {
     console.error("Error registering or updating user:", error);
-    res.status(500).json({ message: 'Error registering or updating user' });
+    res.status(500).json({ message: errorMessages.REGISTRATION_ERROR });
   }
 });
 
