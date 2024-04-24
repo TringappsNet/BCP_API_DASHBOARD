@@ -1,6 +1,6 @@
 /**
  * @swagger
- * /invitation:
+ * /send-invite:
  *   post:
  *     tags: ['Portfolio']
  *     summary: Send invitation email

@@ -1,73 +1,99 @@
 /**
  * @swagger
+ * components:
+ *   schemas:
+ *     LoginRequest:
+ *       type: object
+ *       properties:
+ *         email:
+ *           type: string
+ *           format: email
+ *           description: User's Email Address   
+ *         password:
+ *           type: string
+ *           description: User's Password
+ *       required:
+ *         - email
+ *         - password
+ *       example:
+ *         email: sandhya.k@tringapps.net
+ *         password: 12345
+ *     LoginResponse:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *           description: Message indicating successful login
+ *         UserName:
+ *           type: string
+ *           description: User's name
+ *         userId:
+ *           type: integer
+ *           description: User's ID
+ *         email:
+ *           type: string
+ *           format: email
+ *           description: User's Email Address
+ *         sessionId:
+ *           type: string
+ *           description: Session ID generated for the user
+ *         Organization:
+ *           type: string
+ *           description: User's organization name
+ *         Role_ID:
+ *           type: integer
+ *           description: User's role ID
+ *         Org_ID:
+ *           type: integer
+ *           description: Organization's ID
+ *         role:
+ *           type: string
+ *           description: User's role
+ *       required:
+ *         - message
+ *         - UserName
+ *         - userId
+ *         - email
+ *         - sessionId
+ *         - Organization
+ *         - Role_ID
+ *         - Org_ID
+ *         - role
+ *       example:
+ *         message: "Logged in successfully"
+ *         UserName: "Sandhya"
+ *         userId: 123
+ *         email: "sandhya.k@tringapps.net"
+ *         sessionId: "abcdef123456"
+ *         Organization: "Tringapps Inc."
+ *         Role_ID: 1
+ *         Org_ID: 456
+ *         role: "Admin"
+ */
+
+/**
+ * @swagger
  * /login:
  *   post:
- *     tags: ['Portfolio']
- *     summary: Logs in a user
+ *     tags: 
+ *       - 'Portfolio'
+ *     summary: User Login
  *     description: Logs in a user with the provided email and password.
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 description: User's email address
- *               password:
- *                 type: string
- *                 description: User's password
- *             required:
- *               - email
- *               - password
- *     parameters:
- *       - in: body
- *         name: email
- *         description: User's email address
- *         required: true
- *         schema:
- *           type: string
- *           format: email   
- *       - in: body
- *         name: password
- *         description: User's password
- *         required: true
- *         schema:
- *           type: string
+ *             $ref: '#/components/schemas/LoginRequest'
  *     responses:
  *       '200':
  *         description: Logged in successfully
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Message indicating successful login
- *                 UserName:
- *                   type: string
- *                   description: User's name
- *                 userId:
- *                   type: integer
- *                   description: User's ID
- *                 email:
- *                   type: string
- *                   format: email
- *                   description: User's email address
- *                 sessionId:
- *                   type: string
- *                   description: Session ID
- *                 Organization:
- *                   type: string
- *                   description: Organization name
- *                 Role_ID:
- *                   type: integer
- *                   description: User's role ID
+ *               $ref: '#/components/schemas/LoginResponse'
  *       '400':
- *         description: Invalid request or user not found
+ *         description: Invalid credentials or missing information
  *         content:
  *           application/json:
  *             schema:
@@ -75,9 +101,9 @@
  *               properties:
  *                 error:
  *                   type: string
- *                   description: Error message
+ *                   description: Error message indicating invalid credentials or missing information.
  *       '401':
- *         description: Invalid password
+ *         description: Unauthorized
  *         content:
  *           application/json:
  *             schema:
@@ -85,7 +111,7 @@
  *               properties:
  *                 error:
  *                   type: string
- *                   description: Error message
+ *                   description: Error message indicating unauthorized access.
  *       '500':
  *         description: Internal server error
  *         content:
@@ -95,8 +121,9 @@
  *               properties:
  *                 error:
  *                   type: string
- *                   description: Error message
+ *                   description: Error message indicating an internal server error.
  */
+
 
 const express = require('express');
 const router = express.Router();

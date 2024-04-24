@@ -6,6 +6,7 @@ const endpointFiles = glob.sync('./src/endpoints/**/*.js');
 
 const options = {
   swaggerDefinition: {
+    openapi: "3.1.0",
     info: {
       title: 'BCP',
       version: '1.0.0',
@@ -14,6 +15,11 @@ const options = {
         name: 'API' 
       },
     },
+    servers: [
+      {
+        url: "http://localhost:3001"
+      },
+    ],
     basePath: '/',
     tags: [
         {

@@ -1,8 +1,55 @@
 /**
  * @swagger
+ * components:
+ *   schemas:
+ *     RegisterRequest:
+ *       type: object
+ *       properties:
+ *         token:
+ *           type: string
+ *           description: User's invite token
+ *         firstName:
+ *           type: string
+ *           description: User's first name
+ *         lastName:
+ *           type: string
+ *           description: User's last name
+ *         phoneNo:
+ *           type: string
+ *           description: User's phone number
+ *         password:
+ *           type: string
+ *           description: User's password
+ *       required:
+ *         - token
+ *         - firstName
+ *         - lastName
+ *         - phoneNo
+ *         - password
+ *       example:
+ *         token: abc123
+ *         firstName: John
+ *         lastName: Doe
+ *         phoneNo: +1234567890
+ *         password: secretPassword
+ *     RegisterResponse:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *           description: Message indicating successful registration or update
+ *       required:
+ *         - message
+ *       example:
+ *         message: User registered or updated successfully
+ */
+
+/**
+ * @swagger
  * /register:
  *   post:
- *     tags: ['Portfolio']
+ *     tags: 
+ *       - 'Portfolio'
  *     summary: Register or update user
  *     description: Registers or updates a user with the provided information.
  *     requestBody:
@@ -10,70 +57,15 @@
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               token:
- *                 type: string
- *                 description: User's invite token
- *               firstName:
- *                 type: string
- *                 description: User's first name
- *               lastName:
- *                 type: string
- *                 description: User's last name
- *               phoneNo:
- *                 type: string
- *                 description: User's phone number
- *               password:
- *                 type: string
- *                 description: User's password
- *             required:
- *               - token
- *               - firstName
- *               - lastName
- *               - phoneNo
- *               - password
- *     parameters:
- *       - in: "body"
- *         name: "user"
- *         description: "User information"
- *         required: true
- *         schema:
- *           type: "object"
- *           properties:
- *             token:
- *               type: "string"
- *               description: "User's invite token"
- *             firstName:
- *               type: "string"
- *               description: "User's first name"
- *             lastName:
- *               type: "string"
- *               description: "User's last name"
- *             phoneNo:
- *               type: "string"
- *               description: "User's phone number"
- *             password:
- *               type: "string"
- *               description: "User's password"
- *           required:
- *             - token
- *             - firstName
- *             - lastName
- *             - phoneNo
- *             - password
+ *             $ref: '#/components/schemas/RegisterRequest'
  *     responses:
- *       '201':
+ *       201:
  *         description: User registered or updated successfully
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: Message indicating successful registration or update
- *       '400':
+ *               $ref: '#/components/schemas/RegisterResponse'
+ *       400:
  *         description: Invalid request or user not found
  *         content:
  *           application/json:
@@ -83,7 +75,7 @@
  *                 errors:
  *                   type: object
  *                   description: Object containing validation errors
- *       '404':
+ *       404:
  *         description: User not found
  *         content:
  *           application/json:
@@ -93,7 +85,7 @@
  *                 errors:
  *                   type: object
  *                   description: Object containing error message
- *       '500':
+ *       500:
  *         description: Internal server error
  *         content:
  *           application/json:
@@ -104,6 +96,7 @@
  *                   type: string
  *                   description: Error message
  */
+
 
 
 const express = require('express');

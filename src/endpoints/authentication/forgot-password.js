@@ -1,6 +1,6 @@
 /**
  * @swagger
- * /reset-password:
+ * /forgot-password:
  *   post:
  *     tags: ['Portfolio']
  *     summary: Send password reset link

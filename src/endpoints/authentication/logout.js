@@ -2,8 +2,8 @@
  * @swagger
  * /logout:
  *   post:
- *     tags: ['Authentication']
- *     summary: Logs out the user
+ *     tags: ['Portfolio']
+ *     summary: Ends user session and clears cookies.
  *     description: Logs out the user and destroys the session.
  *     responses:
  *       '200':
