@@ -38,7 +38,7 @@ app.use('/Get-Org', require('./endpoints/orgManagement/getOrganization'));
 app.use('/Get-Role', require('./endpoints/misc/getRole'));
 app.use('/delete-Org', require('./endpoints/orgManagement/deleteOrganization'));
 app.use('/update-Org', require('./endpoints/orgManagement/updateOrganization'));
-app.use('/user-Active', require('./endpoints/userManagement/userActive'));
+app.use('/user-Active', require('./endpoints/userManagement/userIsActive'));
 app.use('/bulk-upload-update', require('./endpoints/dataManagement/bulkUpload'));
 app.use('/forgot-password', require('./endpoints/authentication/forgot-password'));
 app.use('/send-invite', require('./endpoints/authentication/sendInvite'));
