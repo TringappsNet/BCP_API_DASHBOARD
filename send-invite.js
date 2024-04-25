@@ -76,7 +76,7 @@ router.post('/', async (req, res) => {
     // Check if email already exists in the users table
     const existingUser = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
     if (existingUser[0].length > 0) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(300).json({ message: 'User already exists' });
     }
 
     // Get organization ID from the organization table
