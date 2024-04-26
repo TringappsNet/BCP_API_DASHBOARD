@@ -7,26 +7,26 @@ const pool = require('./pool');
 const app = express();
 const port = 3001;
 
-const allowedOrigins = [
-  'http://18.219.123.60', 'http://localhost'
-  // Add more allowed origins here if needed
-];
+// const allowedOrigins = [
+//   'http://18.219.123.60', 'http://localhost'
+//   // Add more allowed origins here if needed
+// ];
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-};
+// const corsOptions = {
+//   origin: function (origin, callback) {
+//     if (!origin || allowedOrigins.includes(origin)) {
+//       callback(null, true);
+//     } else {
+//       callback(new Error('Not allowed by CORS'));
+//     }
+//   },
+// };
 
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
 
 
 app.use(bodyParser.json());
-// app.use(cors());
+app.use(cors({ origin: '*' }));
 app.use(session({
   secret: 'bcp_dashboard',
   resave: false,
