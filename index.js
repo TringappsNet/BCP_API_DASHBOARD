@@ -59,7 +59,7 @@ app.use('/api/users', require('./Users'));
 app.use('/api/create-org', require('./Create_ORG'));
 app.use('/api/Updateuser', require('./UpdateUsers'));
 app.use('/api/DeleteUser', require('./DeleteUser'));
-app.use('/api/api/Get-Org', require('./Get-Org'));
+app.use('/api/Get-Org', require('./Get-Org'));
 app.use('/api/Get-Role', require('./Get_Role'));
 app.use('/api/delete-Org', require('./delete_Org'));
 app.use('/api/update-Org', require('./update_Org'));
