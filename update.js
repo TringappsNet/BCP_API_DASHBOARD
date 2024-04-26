@@ -61,7 +61,7 @@
  *                   type: string
  *                   description: Error message indicating a bad request, such as missing or invalid input data.
  *       '401':
- *         description: Unauthorized
+ *         description: UNAUTHORIZED
  *         content:
  *           application/json:
  *             schema:
@@ -69,7 +69,7 @@
  *               properties:
  *                 message:
  *                   type: string
- *                   description: Error message indicating unauthorized access due to mismatched email headers.
+ *                   description: Error message indicating UNAUTHORIZED access due to mismatched email headers.
  *       '500':
  *         description: Internal server error
  *         content:
@@ -81,6 +81,7 @@
  *                   type: string
  *                   description: Error message indicating an internal server error.
  */
+
 
 
 const express = require('express');

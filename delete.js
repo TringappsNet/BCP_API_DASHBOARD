@@ -80,7 +80,6 @@
  *                   type: string
  *                   description: Error message indicating an internal server error.
  */
-
 const express = require('express');
 const router = express.Router();
 const pool = require('./pool');

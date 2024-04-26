@@ -1,6 +1,6 @@
 /**
  * @swagger
- * /reset-password:
+ * /reset-new:
  *   post:
  *     tags: ['Portfolio']
  *     summary: Reset user password

@@ -10,7 +10,7 @@ const SMTP_PASS = process.env.SMTP_PASS;
 
 /**
  * @swagger
- * /invitation:
+ * /send-invite:
  *   post:
  *     tags: ['Portfolio']
  *     summary: Send invitation email
@@ -65,6 +65,7 @@ const SMTP_PASS = process.env.SMTP_PASS;
  *                   type: string
  *                   description: Error message indicating an internal server error.
  */
+
 
 
 

@@ -73,7 +73,6 @@ const pool = require('./pool');
  *     security:
  *       - apiKey: []
  */
-
 router.post('/', async (req, res) => {
 
   const email = req.header('Email-ID');
