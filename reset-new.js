@@ -74,7 +74,7 @@ router.post('/', async (req, res) => {
   const { email, oldPassword, newPassword } = req.body;
   
   if (!oldPassword || !newPassword) {
-    return res.status(400).json({ message: 'Old password, and new password are required' });
+    return res.status(300).json({ message: 'Old password, and new password are required' });
   }
   
   try {
