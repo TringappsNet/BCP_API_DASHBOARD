@@ -27,28 +27,28 @@ app.use('/send-invite', sendInviteRouter);
 require('./swagger')(app);
 
 // Your existing routes
-app.use('/login', require('./login'));
-app.use('/register', require('./register'));
-app.use('/logout', require('./logout'));
-app.use('/reset-password', require('./reset-password'));
-app.use('/reset-new', require('./reset-new'));
-app.use('/data', require('./data'));
-app.use('/bulk-upload', require('./bulk-upload'));
-app.use('/UserData', require('./UserData'));
-app.use('/update', require('./update'));
-app.use('/delete', require('./delete'));
-app.use('/validate-duplicates', require('./validate-duplicates'));
-app.use('/users', require('./Users'));
-app.use('/create-org', require('./Create_ORG'));
-app.use('/Updateuser', require('./UpdateUsers'));
-app.use('/DeleteUser', require('./DeleteUser'));
-app.use('/api/Get-Org', require('./Get-Org'));
-app.use('/Get-Role', require('./Get_Role'));
-app.use('/delete-Org', require('./delete_Org'));
-app.use('/update-Org', require('./update_Org'));
-app.use('/user-Active', require('./UserActive'));
-app.use('/bulk-upload-update', require('./Bulk-Upload-Update'));
-app.use('/Audit', require('./Audit'));
+app.use('/api/login', require('./login'));
+app.use('/api/register', require('./register'));
+app.use('/api/logout', require('./logout'));
+app.use('/api/reset-password', require('./reset-password'));
+app.use('/api/reset-new', require('./reset-new'));
+app.use('/api/data', require('./data'));
+app.use('/api/bulk-upload', require('./bulk-upload'));
+app.use('/api/UserData', require('./UserData'));
+app.use('/api/update', require('./update'));
+app.use('/api/delete', require('./delete'));
+app.use('/api/validate-duplicates', require('./validate-duplicates'));
+app.use('/api/users', require('./Users'));
+app.use('/api/create-org', require('./Create_ORG'));
+app.use('/api/Updateuser', require('./UpdateUsers'));
+app.use('/api/DeleteUser', require('./DeleteUser'));
+app.use('/api/api/Get-Org', require('./Get-Org'));
+app.use('/api/Get-Role', require('./Get_Role'));
+app.use('/api/delete-Org', require('./delete_Org'));
+app.use('/api/update-Org', require('./update_Org'));
+app.use('/api/user-Active', require('./UserActive'));
+app.use('/api/bulk-upload-update', require('./Bulk-Upload-Update'));
+app.use('/api/Audit', require('./Audit'));
 
 
 // Start the server
