@@ -2,22 +2,36 @@
  * @swagger
  * /update-Org:
  *   put:
- *     tags: ['Portfolio']
+ *     tags: 
+ *       - 'Portfolio'
  *     summary: Update organization name by ID
  *     description: Updates the name of an organization by its ID.
  *     parameters:
- *       - in: body
- *         name: org_id
- *         description: The ID of the organization to update.
- *         required: true
- *         schema:
- *           type: integer
- *       - in: body
- *         name: new_org_name
- *         description: The new name for the organization.
+ *       - in: header
+ *         name: Session-ID
+ *         description: The session ID of the user.
  *         required: true
  *         schema:
  *           type: string
+ *       - in: header
+ *         name: Email
+ *         description: The email address of the user.
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *          application/json:
+ *            schema:
+ *               type: object
+ *               properties:
+ *                  ord_id:
+ *                      type: integer
+ *                      description: The ID of the organization to update
+ *                  new_org_name:
+ *                      type: string
+ *                      descrption: The new name for the organization.    
  *     responses:
  *       '200':
  *         description: Organization name updated successfully
@@ -60,6 +74,7 @@
  *                   type: string
  *                   description: Error message indicating an internal server error.
  */
+
 
 const express = require('express');
 const router = express.Router();

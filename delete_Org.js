@@ -16,12 +16,18 @@
  *                 type: integer
  *                 description: The ID of the organization to be deleted.
  *     parameters:
- *       - in: body
- *         name: org_ID
- *         description: The ID of the organization to be deleted.
+ *       - in: header
+ *         name: Session-ID
+ *         description: The session ID of the user.
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
+ *       - in: header
+ *         name: Email
+ *         description: The email address of the user.
+ *         required: true
+ *         schema:
+ *           type: string
  *     responses:
  *       '200':
  *         description: Organization deleted successfully

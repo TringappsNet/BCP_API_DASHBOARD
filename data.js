@@ -15,9 +15,9 @@
  *       - in: query
  *         name: organization
  *         schema:
- *           type: integer
+ *           type: string
  *         required: false
- *         description: The organization ID for which to retrieve portfolio data
+ *         description: The organization Name for which to retrieve portfolio data
  *     responses:
  *       '200':
  *         description: Portfolio data retrieved successfully
@@ -31,7 +31,6 @@
  *                   fieldName:
  *                     type: string
  *                     description: Description of the field
- *                   # Add other properties here
  *                   MonthYear:
  *                     type: string
  *                     format: date
