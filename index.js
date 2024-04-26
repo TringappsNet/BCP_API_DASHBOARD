@@ -8,7 +8,7 @@ const app = express();
 const port = 3001;
 
 const allowedOrigins = [
-  'http://18.219.123.60',
+  'http://18.219.123.60', 'http://localhost'
   // Add more allowed origins here if needed
 ];
 
