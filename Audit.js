@@ -7,7 +7,7 @@ router.post('/', async (req, res) => {
     const auditLog = req.body;
 
     // Insert the audit log into the Portfolio_Audit table
-    await pool.query('INSERT INTO Portfolio_Audit SET ?', auditLog);
+    await pool.query('INSERT INTO portfolio_audit SET ?', auditLog);
 
     // Send the response
     res.status(200).json({ message: 'Audit log added successfully' });

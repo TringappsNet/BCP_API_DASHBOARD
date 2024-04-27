@@ -38,14 +38,14 @@ router.post('/register', bodyParser.json(), async (req, res) => {
   
     try {
       // Check if the username already exists in the database
-      const selectUserQuery = 'SELECT * FROM Login WHERE UserName = ?';
+      const selectUserQuery = 'SELECT * FROM login WHERE UserName = ?';
       const [rows] = await pool.query(selectUserQuery, [userName]);
       if (rows.length > 0) {
         return res.status(400).json({ errors: { userName: 'Username already exists' } });
       }
   
       // Check if the email already exists in the database
-      const selectEmailQuery = 'SELECT * FROM Login WHERE Email = ?';
+      const selectEmailQuery = 'SELECT * FROM login WHERE Email = ?';
       const [rows2] = await pool.query(selectEmailQuery, [email]);
       if (rows2.length > 0) {
         return res.status(400).json({ errors: { email: 'Email already exists' } });
@@ -55,7 +55,7 @@ router.post('/register', bodyParser.json(), async (req, res) => {
       const passwordHash = await bcrypt.hash(password, salt);
   
       // Insert user data into the Login table
-      const insertQuery = 'INSERT INTO Login (UserName, Password, Email,Organization, PhoneNo, Salt) VALUES (?, ?, ?, ?, ?, ?)';
+      const insertQuery = 'INSERT INTO login (UserName, Password, Email,Organization, PhoneNo, Salt) VALUES (?, ?, ?, ?, ?, ?)';
       const [result] = await pool.query(insertQuery, [userName, passwordHash, email, organization, phoneNo, salt]);
   
       console.log("User registered successfully!");
@@ -79,7 +79,7 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    const [rows] = await pool.query('SELECT * FROM Login WHERE UserName = ?', [userName]);
+    const [rows] = await pool.query('SELECT * FROM login WHERE UserName = ?', [userName]);
     if (rows.length > 0) {
       const user = rows[0];
       console.log('Hashed password from database:', user.Password);

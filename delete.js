@@ -111,13 +111,13 @@ router.post('/', async (req, res) => {
 
     const deletePromises = ids.map(async id => {
       try {
-        const [deletedRow] = await connection.query('SELECT * FROM Portfolio_Companies_format WHERE id = ?', [id]);
+        const [deletedRow] = await connection.query('SELECT * FROM portfolio_companies_format WHERE id = ?', [id]);
         
         if (!deletedRow || !deletedRow.length) {
           return;
         }
 
-        const query = 'DELETE FROM Portfolio_Companies_format WHERE id = ?';
+        const query = 'DELETE FROM portfolio_companies_format WHERE id = ?';
         await connection.query(query, [id]);
 
         const { ID, UserName, Role_ID, Org_ID, UserID, ...modifiedDeletedRow } = deletedRow[0];
@@ -133,7 +133,7 @@ router.post('/', async (req, res) => {
         };
 
         // Insert audit log
-        await connection.query('INSERT INTO Portfolio_Audit SET ?', auditLogValues);
+        await connection.query('INSERT INTO portfolio_audit SET ?', auditLogValues);
       } catch (error) {
         console.error('Error deleting row:', error);
         // You can choose to throw the error or handle it according to your application's requirements
