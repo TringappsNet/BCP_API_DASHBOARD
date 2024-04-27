@@ -138,7 +138,7 @@ router.post('/', updatedRow, async (req, res) => {
     values.push(editedRow.ID);
 
     // Construct SQL query
-    const query = `UPDATE Portfolio_Companies_format SET ${setStatements.join(', ')} WHERE ID = ?`;
+    const query = `UPDATE portfolio_companies_format SET ${setStatements.join(', ')} WHERE ID = ?`;
 
     // Execute the query
     const [result] = await pool.query(query, values);
@@ -156,7 +156,7 @@ router.post('/', updatedRow, async (req, res) => {
         }, {})
       };
       // Insert audit log
-      await pool.query('INSERT INTO Portfolio_Audit SET ?', auditLogValues);
+      await pool.query('INSERT INTO portfolio_audit SET ?', auditLogValues);
 
       res.status(200).json({ message: 'Row updated successfully' });
     } else {

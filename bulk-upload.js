@@ -142,7 +142,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
       const columns = ['Org_ID', 'UserName', 'Role_ID', ...Object.keys(row).map(key => columnMap[key])];
     
       const placeholders = values.map(() => '?').join(', '); 
-      const query1 = 'INSERT INTO Portfolio_Companies_format (' + columns.join(', ') + ') VALUES (' + placeholders + ')'; 
+      const query1 = 'INSERT INTO portfolio_companies_format (' + columns.join(', ') + ') VALUES (' + placeholders + ')'; 
       await connection.query(query1, values); 
 
 
@@ -157,7 +157,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
       }, {})
       };
       
-    insertPromises.push(connection.query('INSERT INTO Portfolio_Audit SET ?', auditLogValues));
+    insertPromises.push(connection.query('INSERT INTO portfolio_audit SET ?', auditLogValues));
   }
     
     await Promise.all(insertPromises);

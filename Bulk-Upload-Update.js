@@ -163,7 +163,7 @@ router.post("/", bodyParser.json(), async (req, res) => {
       const companyName = newData["CompanyName"].toLowerCase().replace(/\s/g, '');
    
       const [existingRows] = await connection.  query(
-        "SELECT * FROM Portfolio_Companies_format WHERE MonthYear = ? AND CompanyName = ?",
+        "SELECT * FROM portfolio_companies_format WHERE MonthYear = ? AND CompanyName = ?",
         [monthYear, companyName]
         
       );
@@ -185,7 +185,7 @@ router.post("/", bodyParser.json(), async (req, res) => {
             return acc;
           }, {})
         };
-        insertPromises.push(connection.query('INSERT INTO Portfolio_Audit SET ?', auditLogValuesUpdate));
+        insertPromises.push(connection.query('INSERT INTO portfolio_audit SET ?', auditLogValuesUpdate));
       } else {
         // Insert new row
         const insertValue = {
@@ -206,7 +206,7 @@ router.post("/", bodyParser.json(), async (req, res) => {
             return acc;
           }, {})
         };
-        insertPromises.push(connection.query('INSERT INTO Portfolio_Audit SET ?', auditLogValuesInsert));
+        insertPromises.push(connection.query('INSERT INTO portfolio_audit SET ?', auditLogValuesInsert));
       }
     }
     
@@ -214,7 +214,7 @@ router.post("/", bodyParser.json(), async (req, res) => {
     // Bulk update
     if (updateValues.length > 0) {
       const updateQuery =
-        "UPDATE Portfolio_Companies_format SET ? WHERE ID = ?"; 
+        "UPDATE portfolio_companies_format SET ? WHERE ID = ?"; 
       for (const updateValue of updateValues) {
         await connection.query(updateQuery, [updateValue, updateValue.ID]);
       }
@@ -226,7 +226,7 @@ if (insertValues.length > 0) {
     const columns = Object.keys(insertValue);
     const placeholders = columns.map(() => "?").join(", ");
     const values = columns.map((col) => insertValue[col]);
-    const insertQuery = `INSERT INTO Portfolio_Companies_format (${columns.join(", ")}) VALUES (${placeholders})`;
+    const insertQuery = `INSERT INTO portfolio_companies_format (${columns.join(", ")}) VALUES (${placeholders})`;
     await connection.query(insertQuery, values);
   }
 }

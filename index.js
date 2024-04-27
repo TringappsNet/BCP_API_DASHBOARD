@@ -37,8 +37,8 @@ app.use(session({
 const forgotPasswordRouter = require('./forgot-password');
 const sendInviteRouter = require('./send-invite');
 
-app.use('/forgot-password', forgotPasswordRouter);
-app.use('/send-invite', sendInviteRouter);
+app.use('/api/forgot-password', forgotPasswordRouter);
+app.use('/api/send-invite', sendInviteRouter);
 
 // Import and use the Swagger setup
 require('./swagger')(app);
