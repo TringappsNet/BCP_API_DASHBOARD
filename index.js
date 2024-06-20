@@ -5,7 +5,7 @@ const session = require('express-session');
 const bcrypt = require('bcrypt');
 const pool = require('./pool');
 const app = express();
-const port = 3001;
+const port = process.env.PORT || 3001;
 
 // const allowedOrigins = [
 //   'http://18.219.123.60', 'http://localhost'
@@ -68,7 +68,6 @@ app.use('/api/bulk-upload-update', require('./Bulk-Upload-Update'));
 app.use('/api/Audit', require('./Audit'));
 
 
-// Start the server
 app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
 });
