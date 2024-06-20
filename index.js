@@ -61,6 +61,7 @@ app.use('/api/Updateuser', require('./UpdateUsers'));
 app.use('/api/DeleteUser', require('./DeleteUser'));
 app.use('/api/Get-Org', require('./Get-Org'));
 app.use('/api/Get-Role', require('./Get_Role'));
+app.use('/api/invite', require('./send-invite'));
 app.use('/api/delete-Org', require('./delete_Org'));
 app.use('/api/update-Org', require('./update_Org'));
 app.use('/api/user-Active', require('./UserActive'));
