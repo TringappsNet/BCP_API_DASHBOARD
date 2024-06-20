@@ -14,7 +14,7 @@ const SMTP_PASS = process.env.SMTP_PASS;
  *   post:
  *     tags: ['Portfolio']
  *     summary: Send invitation email
- *     description: |
+ *     description: Send Invitation for user registration
  *       Sends an invitation email to the specified email address, allowing the recipient to join the platform.
  *     requestBody:
  *       required: true
