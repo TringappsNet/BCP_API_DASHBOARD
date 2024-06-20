@@ -1,10 +1,10 @@
 const mysql = require('mysql2/promise');
 
 const config = {
-  host: '',
+  host: 'bcpbackendnew.mysql.database.azure.com',
   user: 'bcpadmin',
   port: '3306',
-  password: '',
+  password: 'B63ntf0rdC@p',
   database: 'bcp',
   ssl: {
     mode: 'require'
