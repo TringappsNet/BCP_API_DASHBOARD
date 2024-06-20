@@ -10,7 +10,7 @@ const SMTP_PASS = process.env.SMTP_PASS;
 
 /**
  * @swagger
- * /invite:
+ * /api/invite:
  *   post:
  *     tags: ['Portfolio']
  *     summary: Send invitation email
@@ -107,7 +107,7 @@ router.post('/', async (req, res) => {
     return res.status(200).json({ message: 'Invitation sent successfully' });
   } catch (error) {
     console.error('Error sending invitation:', error);
-    return res.status(500).json({ message: 'Enter a valid Email' });
+    return res.status(500).json({ message: 'Server Down!' });
   }
 });
 
