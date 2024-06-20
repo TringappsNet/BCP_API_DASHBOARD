@@ -10,7 +10,7 @@ const SMTP_PASS = process.env.SMTP_PASS;
 
 /**
  * @swagger
- * /send-invite:
+ * /invite:
  *   post:
  *     tags: ['Portfolio']
  *     summary: Send invitation email
