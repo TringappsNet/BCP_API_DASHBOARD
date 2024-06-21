@@ -70,49 +70,53 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const pool = require('./pool');
 
-router.post('/', async (req, res) => {
+router.post('/', (req, res) => {
   const { email, oldPassword, newPassword } = req.body;
   
-  if (!email || !oldPassword || !newPassword) {
-    return res.status(400).json({ message: 'Email, old password, and new password are required' });
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ message: 'Old password and new password are required' });
   }
-
-  let connection;
-  try {
-    connection = await pool.getConnection();
-
-    // Check if the user exists in the database
-    const [rows] = await connection.query('SELECT * FROM users WHERE Email = ?', [email]);
+  
+  pool.query('SELECT * FROM users WHERE Email = ?', [email], async (err, rows) => {
+    if (err) {
+      console.error("Error executing SQL query:", err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
 
     if (!rows || rows.length === 0) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(400).json({ message: 'User not found' });
     }
-
+    
     const user = rows[0]; // Extract the first row from the result
-
-    // Validate the old password
-    const isValidPassword = await bcrypt.compare(oldPassword, user.PasswordHash);
-
-    if (!isValidPassword) {
-      return res.status(401).json({ message: 'Invalid old password' });
+    
+    try {
+      // Validate the old password
+      const isValidPassword = await bcrypt.compare(oldPassword, user.PasswordHash);
+      
+      if (!isValidPassword) {
+        return res.status(401).json({ message: 'Invalid old password' });
+      }
+      
+      // Hash the new password
+      const salt = await bcrypt.genSalt();
+      const newPasswordHash = await bcrypt.hash(newPassword, salt);
+      
+      // Update the user's password in the database using the user's ID
+      const updateQuery = 'UPDATE users SET PasswordHash = ?, Salt = ? WHERE UserID = ?';
+      pool.query(updateQuery, [newPasswordHash, salt, user.UserID], (updateErr) => {
+        if (updateErr) {
+          console.error("Error updating password in database:", updateErr);
+          return res.status(500).json({ message: 'Internal server error' });
+        }
+        
+        console.log("Password reset successfully!");
+        res.status(200).json({ message: 'Password reset successfully' });
+      });
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      res.status(500).json({ message: 'Error resetting password' });
     }
-
-    // Hash the new password
-    const salt = await bcrypt.genSalt();
-    const newPasswordHash = await bcrypt.hash(newPassword, salt);
-
-    // Update the user's password in the database using the user's ID
-    const updateQuery = 'UPDATE users SET PasswordHash = ?, Salt = ? WHERE UserID = ?';
-    await connection.query(updateQuery, [newPasswordHash, salt, user.UserID]);
-
-    console.log("Password reset successfully!");
-    res.status(200).json({ message: 'Password reset successfully' });
-  } catch (error) {
-    console.error("Error resetting password:", error);
-    res.status(500).json({ message: 'Error resetting password' });
-  } finally {
-    if (connection) connection.release();
-  }
+  });
 });
 
 module.exports = router;

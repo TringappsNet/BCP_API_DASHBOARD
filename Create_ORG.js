@@ -1,8 +1,3 @@
-const express = require('express');
-const router = express.Router();
-const pool = require('./pool'); // Import the MySQL pool
-const bodyParser = require('body-parser');
-
 /**
  * @swagger
  * /create-org:
@@ -70,61 +65,47 @@ const bodyParser = require('body-parser');
  *                   description: Error message indicating the internal server error
  */
 
-router.post("/", bodyParser.json(), async (req, res) => {
-  const sessionId = req.header("Session-ID");
-  const emailHeader = req.header("Email");
+const express = require('express');
+const router = express.Router();
+const pool = require('./pool');
 
-  if (!sessionId || !emailHeader) {
-    return res
-      .status(400)
-      .json({ message: "Session ID and Email headers are required!" });
-  }
-
-  try {
-    const connection = await pool.getConnection();
-
+// POST endpoint to create organization
+router.post('/', (req, res) => {
     try {
-      // Extract organization name from request body
-      const { org_name } = req.body;
+        // Extract organization name from request body
+        const { org_name } = req.body;
 
-      // Check if organization name is provided
-      if (!org_name) {
-        return res
-          .status(400)
-          .json({ error: "Organization name is required" });
-      }
+        // Check if organization name is provided
+        if (!org_name) {
+            return res.status(400).json({ error: 'Organization name is required' });
+        }
 
-      // Check if organization already exists
-      const [existingOrg] = await connection.query(
-        "SELECT * FROM organization WHERE org_name = ?",
-        [org_name]
-      );
-      if (existingOrg.length > 0) {
-        return res
-          .status(400)
-          .json({ error: "Organization already exists" });
-      }
+        // Check if organization already exists
+        pool.query('SELECT * FROM organization WHERE org_name = ?', [org_name], (selectError, existingOrg) => {
+            if (selectError) {
+                console.error('Error checking existing organization:', selectError);
+                return res.status(500).json({ error: 'Error checking existing organization' });
+            }
 
-      // Insert the organization into the database
-      const [result] = await connection.query(
-        "INSERT INTO organization (org_name) VALUES (?)",
-        [org_name]
-      );
+            if (existingOrg.length > 0) {
+                return res.status(400).json({ error: 'Organization already exists' });
+            }
 
-      // Send success response
-      res
-        .status(201)
-        .json({
-          message: "Organization created successfully",
-          org_ID: result.insertId,
+            // Insert the organization into the database
+            pool.query('INSERT INTO organization (org_name) VALUES (?)', [org_name], (insertError, result) => {
+                if (insertError) {
+                    console.error('Error creating organization:', insertError);
+                    return res.status(500).json({ error: 'Error creating organization' });
+                }
+
+                // Send success response
+                res.status(201).json({ message: 'Organization created successfully', org_ID: result.insertId });
+            });
         });
-    } finally {
-      connection.release();
+    } catch (error) {
+        console.error('Error creating organization:', error);
+        return res.status(500).json({ error: 'Error creating organization' });
     }
-  } catch (error) {
-    console.error("Error creating organization:", error);
-    return res.status(500).json({ error: "Error creating organization" });
-  }
 });
 
 module.exports = router;

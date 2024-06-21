@@ -73,26 +73,23 @@ const pool = require('./pool');
  *     security:
  *       - apiKey: []
  */
+router.post('/', (req, res) => {
 
-router.post('/', async (req, res) => {
   const email = req.header('Email-ID');
   const sessionId = req.header('Session-ID');
-  const { resetToken, newPassword } = req.body;
 
-  // Validate headers and request body
+  // Validate headers
   if (!email || !sessionId) {
     return res.status(400).json({ message: 'Email-ID and Session-ID headers are required!' });
   }
-  if (!resetToken || !newPassword) {
-    return res.status(400).json({ message: 'resetToken and newPassword are required in the request body' });
-  }
 
-  let connection;
-  try {
-    connection = await pool.getConnection();
+  const { resetToken, newPassword } = req.body;
 
-    // Check if the user exists with the provided reset token
-    const [rows] = await connection.query('SELECT * FROM users WHERE resetToken = ?', [resetToken]);
+  pool.query('SELECT * FROM users WHERE resetToken = ?', [resetToken], async (err, rows) => {
+    if (err) {
+      console.error('Error executing SQL query:', err);
+      return res.status(500).json({ message: 'Error resetting password' });
+    }
 
     if (!rows || rows.length === 0) {
       return res.status(400).json({ message: 'Invalid or expired reset token' });
@@ -100,22 +97,28 @@ router.post('/', async (req, res) => {
 
     const user = rows[0];
 
-    // Hash the new password
-    const salt = await bcrypt.genSalt();
-    const newPasswordHash = await bcrypt.hash(newPassword, salt);
+    try {
+      // Hash the new password
+      const salt = await bcrypt.genSalt();
+      const newPasswordHash = await bcrypt.hash(newPassword, salt);
 
-    // Update the user's password in the database
-    await connection.query('UPDATE users SET PasswordHash = ?, Salt = ?, resetToken = NULL, resetTokenExpiry = NULL WHERE UserID = ?', [newPasswordHash, salt, user.UserID]);
+      pool.query('UPDATE users SET PasswordHash = ?, Salt = ?, resetToken = NULL, resetTokenExpiry = NULL WHERE resetToken = ?', 
+        [newPasswordHash, salt, resetToken], 
+        (updateErr) => {
+          if (updateErr) {
+            console.error('Error updating password in database:', updateErr);
+            return res.status(500).json({ message: 'Error resetting password' });
+          }
 
-    // Respond with success message
-    return res.status(200).json({ message: 'Password reset successfully' });
-
-  } catch (error) {
-    console.error('Error resetting password:', error);
-    return res.status(500).json({ message: 'Error resetting password' });
-  } finally {
-    if (connection) connection.release();
-  }
+          console.log('Password reset successfully!');
+          return res.status(200).json({ message: 'Password reset successfully' });
+        }
+      );
+    } catch (hashError) {
+      console.error('Error hashing new password:', hashError);
+      return res.status(500).json({ message: 'Error resetting password' });
+    }
+  });
 });
 
 module.exports = router;

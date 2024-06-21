@@ -55,23 +55,20 @@ router.get('/', async (req, res) => {
   try {
     const { username, organization } = req.query;
 
-    // Trim and normalize the organization name
     const organization_name = organization.toLowerCase().trim().replace(/\s/g, '');
+    // Call the stored procedure GetPortfolioData
+    pool.query('CALL GetPortfolioData(?, ?)', [username, organization_name], (error, results) => {
+      if (error) {
+        console.error('Error retrieving data:', error);
+        return res.status(500).json({ message: 'Error retrieving data' });
+      }
 
-    // Get a connection from the pool
-    const connection = await pool.getConnection();
-
-    try {
-      // Call the stored procedure GetPortfolioData
-      const [result] = await connection.query('CALL GetPortfolioData(?, ?)', [username, organization_name]);
-      const rows = result[0];
-
-      // Send the retrieved data as the response
-      res.status(200).json(rows);
-    } finally {
-      // Release the connection back to the pool
-      connection.release();
-    }
+      const rows = results[0];
+      const data = rows.map(row => row);
+      
+      res.status(200).json(data);
+    });
+    
   } catch (error) {
     console.error('Error retrieving data:', error);
     res.status(500).json({ message: 'Error retrieving data' });

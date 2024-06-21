@@ -75,45 +75,37 @@ const express = require('express');
 const router = express.Router();
 const pool = require('./pool');
 
-router.delete('/', async (req, res) => {
+router.delete('/', (req, res) => {
     const { org_ID } = req.body;
 
-    try {
-        // Check if org_ID is provided
-        if (!org_ID) {
-            return res.status(400).json({ error: 'Organization ID is required!' });
+    if (!org_ID) {
+        return res.status(400).json({ error: 'Organization ID is required!' });
+    }
+
+    pool.query('SELECT COUNT(*) AS userCount FROM users WHERE Org_ID = ?', [org_ID], (selectError, userResult) => {
+        if (selectError) {
+            console.error('Error checking associated users:', selectError);
+            return res.status(500).json({ error: 'Error checking associated users' });
         }
 
-        // Get a connection from the pool
-        const connection = await pool.getConnection();
+        const userCount = userResult[0].userCount;
+        if (userCount > 0) {
+            return res.status(400).json({ error: 'Cannot delete organization as it is associated with users' });
+        }
 
-        try {
-            // Check if there are users associated with the organization
-            const [userResult] = await connection.query('SELECT COUNT(*) AS userCount FROM users WHERE Org_ID = ?', [org_ID]);
-            const userCount = userResult[0].userCount;
-
-            if (userCount > 0) {
-                return res.status(400).json({ error: 'Cannot delete organization as it is associated with users' });
+        pool.query('DELETE FROM organization WHERE org_ID = ?', [org_ID], (deleteError, result) => {
+            if (deleteError) {
+                console.error('Error deleting organization:', deleteError);
+                return res.status(500).json({ error: 'Error deleting organization' });
             }
 
-            // Delete the organization
-            const [result] = await connection.query('DELETE FROM organization WHERE org_ID = ?', [org_ID]);
-
-            // Check if any rows were affected
             if (result.affectedRows === 0) {
                 return res.status(404).json({ error: 'Organization not found!' });
             }
 
-            // Send success response
-            return res.status(200).json({ message: 'Organization deleted successfully' });
-        } finally {
-            // Release the connection back to the pool
-            connection.release();
-        }
-    } catch (error) {
-        console.error("Error deleting organization:", error);
-        return res.status(500).json({ error: 'Error deleting organization' });
-    }
+            res.status(200).json({ message: 'Organization deleted successfully' });
+        });
+    });
 });
 
 module.exports = router;

@@ -10,7 +10,7 @@ const BULK_INSERT_PROCEDURE = 'Bulk_Insert';
 
 router.post('/', bodyParser.json(), async (req, res) => {
   const { userData, data } = req.body; 
-  const { username, organization, email, roleID } = userData; // Add roleID to the destructured object
+  const { username, organization, email, roleID } = userData;
 
   // Validate headers
   const sessionId = req.header('Session-ID'); 

@@ -88,7 +88,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('./pool');
 
-router.post('/', async (req, res) => {
+router.post('/', (req, res) => {
   const sessionId = req.header('Session-ID');
   const emailHeader = req.header('Email');
   
@@ -96,48 +96,50 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ message: 'Session ID and Email headers are required!' });
   }
 
-  let connection;
-
   try {
     const { email, Role } = req.body;
-    connection = await pool.getConnection();
 
-
-    // if (email !== emailHeader) {
-    //   return res.status(401).json({ message: 'Unauthorized: Email header does not match user data!' });
-    // }
-    
-    // Check if email, role, and organization are provided
     if (!email || !Role) {
-      return res.status(400).json({ error: 'Email, Role, and Organization are required in the request body' });
+      return res.status(400).json({ error: 'Email and Role are required in the request body' });
     }
 
-    // // Query organization table to get org_ID
+      // // Query organization table to get org_ID
     // const [orgResult] = await pool.query('SELECT org_ID FROM organization WHERE org_name = ?', [Organization]);
     // const org_ID = orgResult.length > 0 ? orgResult[0].org_ID : null;
 
-    // Query role table to get role_ID
-    const [roleResult] = await connection.query('SELECT role_ID FROM role WHERE role = ?', [Role]);
-    const role_ID = roleResult.length > 0 ? roleResult[0].role_ID : null;
+    const queryRole = 'SELECT role_ID FROM role WHERE role = ?';
+    pool.query(queryRole, [Role], (error, roleResult) => {
+      if (error) {
+        console.error('Error querying role:', error);
+        return res.status(500).json({ error: 'Error querying role' });
+      }
 
-    // Check if organization and role exist
-    if (!role_ID) {
-      return res.status(404).json({ error: 'Role not found' });
-    }
+      const role_ID = roleResult.length > 0 ? roleResult[0].role_ID : null;
 
-    // Execute the SQL query to update user role and organization
-    const result = await connection.query('UPDATE users SET Role_ID = ? WHERE Email = ?', [role_ID, email]);
+      if (!role_ID) {
+        return res.status(404).json({ error: 'Role not found' });
+      }
 
-    // Check if the update was successful
-    if (result[0].affectedRows === 1) {
-      return res.status(200).json({ message: 'User role updated successfully' });
-    } else {
-      return res.status(500).json({ error: 'Failed to update user role and organization' });
-    }
+      const queryUpdate = 'UPDATE users SET Role_ID = ? WHERE Email = ?';
+      pool.query(queryUpdate, [role_ID, email], (updateError, result) => {
+        if (updateError) {
+          console.error('Error updating user role:', updateError);
+          return res.status(500).json({ error: 'Error updating user role' });
+        }
+
+        if (result.affectedRows === 1) {
+          return res.status(200).json({ message: 'User role updated successfully' });
+        } else {
+          return res.status(500).json({ error: 'Failed to update user role' });
+        }
+      });
+    });
   } catch (error) {
-    console.error('Error updating user role :', error);
+    console.error('Error updating user role:', error);
     return res.status(500).json({ error: 'Error updating user role' });
   }
 });
 
 module.exports = router;
+
+  

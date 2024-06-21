@@ -70,7 +70,7 @@ require('dotenv').config();
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 
-router.post('/', async (req, res) => {
+router.post('/', (req, res) => {
   const { email } = req.body;
 
   // Validate email using regex
@@ -78,30 +78,35 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ message: 'Please provide a valid email address' });
   }
 
-  try {
-    const connection = await pool.getConnection();
-    try {
-      const [user] = await connection.query('SELECT * FROM users WHERE Email = ?', [email]);
-      if (!user || user.length === 0) {
-        return res.status(404).json({ message: 'Email not found' });
-      }
-
-      if (user[0].isActive === 0) {
-        return res.status(400).json({ message: 'User Inactive. Please contact the administrator for further assistance.' });
-      }
-
-      const resetToken = generateResetToken(user[0].UserID);
-      await updateResetToken(connection, resetToken, user[0].UserID);
-      await sendResetLink(email, resetToken);
-
-      return res.status(200).json({ message: 'Reset link sent successfully' });
-    } finally {
-      connection.release();
+  pool.query('SELECT * FROM users WHERE Email = ?', [email], (err, results) => {
+    if (err) {
+      console.error('Error executing SQL query:', err);
+      return res.status(500).json({ message: 'Internal server error' });
     }
-  } catch (err) {
-    console.error('Error executing SQL query:', err);
-    return res.status(500).json({ message: 'Internal server error' });
-  }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Email not found' });
+    }
+
+    const user = results[0];
+
+    if (user.isActive === 0) {
+      return res.status(400).json({ message: 'User Inactive. Please contact the administrator for further assistance.' });
+    }
+
+    const resetToken = generateResetToken(user.UserID);
+    updateResetToken(resetToken, user.UserID, (updateErr) => {
+      if (updateErr) {
+        return res.status(500).json({ message: 'Internal server error' });
+      }
+      sendResetLink(email, resetToken, (emailErr) => {
+        if (emailErr) {
+          return res.status(500).json({ message: 'Internal server error' });
+        }
+        return res.status(200).json({ message: 'Reset link sent successfully' });
+      });
+    });
+  });
 });
 
 function generateResetToken(userId) {
@@ -112,39 +117,43 @@ function generateResetToken(userId) {
   return hashedToken;
 }
 
-async function updateResetToken(connection, resetToken, userId) {
-  try {
-    await connection.query('UPDATE users SET resetToken = ? WHERE UserID = ?', [resetToken, userId]);
-  } catch (err) {
-    console.error('Error updating reset token in user table:', err);
-    throw err;
-  }
+function updateResetToken(resetToken, userId, callback) {
+  pool.query('UPDATE users SET resetToken = ? WHERE UserID = ?', [resetToken, userId], (err) => {
+    if (err) {
+      console.error('Error updating reset token in user table:', err);
+      return callback(err);
+    }
+    callback(null);
+  });
 }
 
-async function sendResetLink(email, resetToken) {
-  try {
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: SMTP_USER,
-        pass: SMTP_PASS
-      }
-    });
-    const resetLink = `https://bcpportal.azurewebsites.net/reset-password?token=${encodeURIComponent(resetToken)}`;
+function sendResetLink(email, resetToken, callback) {
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: {
+      user: SMTP_USER,
+      pass: SMTP_PASS
+    }
+  });
 
-    const mailOptions = {
-      from: SMTP_USER,
-      to: email,
-      subject: 'Reset Your Password',
-      text: `To reset your password, click on the following link: ${resetLink}`
-    };
-    await transporter.sendMail(mailOptions);
-  } catch (err) {
-    console.error('Error sending reset link email:', err);
-    throw err;
-  }
+  const resetLink = `https://bcpportal.azurewebsites.net/reset-password?token=${encodeURIComponent(resetToken)}`;
+
+  const mailOptions = {
+    from: 'sender@example.com',
+    to: email,
+    subject: 'Reset Your Password',
+    text: `To reset your password, click on the following link: ${resetLink}`
+  };
+
+  transporter.sendMail(mailOptions, (err, info) => {
+    if (err) {
+      console.error('Error sending reset link email:', err);
+      return callback(err);
+    }
+    callback(null);
+  });
 }
 
 module.exports = router;

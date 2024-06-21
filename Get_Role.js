@@ -41,22 +41,22 @@ const router = express.Router();
 const pool = require('./pool');
 
 // GET endpoint to retrieve all roles
-router.get('/', async (req, res) => {
-    let connection;
+router.get('/', (req, res) => {
     try {
-        connection = await pool.getConnection();
-
         // Query the database to retrieve all roles
-        const [rows] = await connection.query('SELECT * FROM role');
+        pool.query('SELECT * FROM role', (error, results) => {
+            if (error) {
+                console.error('Error retrieving roles:', error);
+                return res.status(500).json({ error: 'Error retrieving roles' });
+            }
 
-        // Send back the array of roles
-        res.status(200).json(rows);
+            // Send back the array of roles
+            res.status(200).json(results);
+        });
     } catch (error) {
         // If an error occurs, send a 500 Internal Server Error response
         console.error('Error retrieving roles:', error);
         res.status(500).json({ error: 'Error retrieving roles' });
-    } finally {
-        if (connection) connection.release();
     }
 });
 

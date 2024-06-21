@@ -76,36 +76,29 @@ const router = express.Router();
 const pool = require('./pool');
 
 // DELETE endpoint to delete a user by UserID
-router.delete('/', async (req, res) => {
-    try {
-        // Extract UserID from request body
-        const { userID } = req.body;
+router.delete('/', (req, res) => {
+    // Extract UserID from request body
+    const { userID } = req.body;
 
-        // Check if userID is provided
-        if (!userID) {
-            return res.status(400).json({ error: 'UserID is required in the request body' });
-        }
-
-        // Obtain a connection from the pool
-        const connection = await pool.getConnection();
-        try {
-            // Call the SQL query to delete the user
-            const [result] = await connection.query('DELETE FROM users WHERE UserID = ?', [userID]);
-
-            // Check if the user was deleted successfully
-            if (result.affectedRows === 1) {
-                return res.status(200).json({ message: 'User deleted successfully' });
-            } else {
-                return res.status(404).json({ error: 'User not found' });
-            }
-        } finally {
-            // Release the connection back to the pool
-            connection.release();
-        }
-    } catch (error) {
-        console.error('Error deleting user:', error);
-        return res.status(500).json({ error: 'Error deleting user' });
+    // Check if userID is provided
+    if (!userID) {
+        return res.status(400).json({ error: 'UserID is required in the request body' });
     }
+
+    // Call the SQL query to delete the user
+    pool.query('DELETE FROM users WHERE UserID = ?', [userID], (error, result) => {
+        if (error) {
+            console.error('Error deleting user:', error);
+            return res.status(500).json({ error: 'Error deleting user' });
+        }
+
+        // Check if the user was deleted successfully
+        if (result.affectedRows === 1) {
+            return res.status(200).json({ message: 'User deleted successfully' });
+        } else {
+            return res.status(404).json({ error: 'User not found' });
+        }
+    });
 });
 
 module.exports = router;
