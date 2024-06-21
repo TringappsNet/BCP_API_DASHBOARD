@@ -1,13 +1,23 @@
-const mysql = require('mysql2/promise');
+const mysql = require('mysql');
+const fs = require('fs');
 
-const config = {
+const pool = mysql.createConnection({
   host: 'bcpbackendnew.mysql.database.azure.com',
   user: 'bcpadmin',
-  port: '3306',
   password: 'B63ntf0rdC@p',
   database: 'bcp',
   ssl: {
-    mode: 'require'
+    rejectUnauthorized: true,
+    ca: fs.readFileSync('./certs/certificate1.pem')
   }
-};
-module.exports = mysql.createPool(config);
+});
+
+pool.connect((err) => {
+  if (err) {
+    console.error('Error connecting to MySQL:', err);
+  } else {
+    console.log('Connected to MySQL database!');
+  }
+});
+
+module.exports = pool;

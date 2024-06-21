@@ -86,14 +86,21 @@ router.delete('/', async (req, res) => {
             return res.status(400).json({ error: 'UserID is required in the request body' });
         }
 
-        // Call the stored procedure or SQL query to delete the user
-        const result = await pool.query('DELETE FROM users WHERE UserID = ?', [userID]);
+        // Obtain a connection from the pool
+        const connection = await pool.getConnection();
+        try {
+            // Call the SQL query to delete the user
+            const [result] = await connection.query('DELETE FROM users WHERE UserID = ?', [userID]);
 
-        // Check if the user was deleted successfully
-        if (result.affectedRows === 1) {
-            return res.status(200).json({ message: 'User deleted successfully' });
-        } else {
-            return res.status(404).json({ error: 'User not found' });
+            // Check if the user was deleted successfully
+            if (result.affectedRows === 1) {
+                return res.status(200).json({ message: 'User deleted successfully' });
+            } else {
+                return res.status(404).json({ error: 'User not found' });
+            }
+        } finally {
+            // Release the connection back to the pool
+            connection.release();
         }
     } catch (error) {
         console.error('Error deleting user:', error);

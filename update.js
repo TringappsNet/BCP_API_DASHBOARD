@@ -4,8 +4,7 @@
  *   post:
  *     tags: ['Portfolio']
  *     summary: Update a row
- *     description: |
- *       Update a row in the database based on the provided data.
+ *     description: Update a row in the database based on the provided data.
  *     parameters:
  *       - in: header
  *         name: Session-ID
@@ -61,7 +60,7 @@
  *                   type: string
  *                   description: Error message indicating a bad request, such as missing or invalid input data.
  *       '401':
- *         description: UNAUTHORIZED
+ *         description: Unauthorized
  *         content:
  *           application/json:
  *             schema:
@@ -69,7 +68,7 @@
  *               properties:
  *                 message:
  *                   type: string
- *                   description: Error message indicating UNAUTHORIZED access due to mismatched email headers.
+ *                   description: Error message indicating unauthorized access due to mismatched email headers.
  *       '500':
  *         description: Internal server error
  *         content:
@@ -82,41 +81,37 @@
  *                   description: Error message indicating an internal server error.
  */
 
-
-
 const express = require('express');
 const router = express.Router();
 const pool = require('./pool');
-const bodyParser = require('body-parser');
-const updatedRow = require('./middlewares/updated-row');
 const { columnMap } = require('./Objects');
 
+router.use(express.json());
 
-router.use(bodyParser.json());
-
-router.post('/', updatedRow, async (req, res) => {
+router.post('/', async (req, res) => {
   const sessionId = req.header('Session-ID');
   const emailHeader = req.header('email');
-  const email=req.body.email;
-  const userId=req.body.userId;
-  const Org_ID=req.body.Org_ID;
+  const { email, userId, Org_ID, editedRow } = req.body;
 
+  // Validate headers
   if (!sessionId || !emailHeader) {
     return res.status(400).json({ message: 'Session ID and Email headers are required!' });
   }
-  
-  // You may want to validate sessionId against your session data in the database
-  
+
+  // Validate email header against request body
   if (email !== emailHeader) {
     return res.status(401).json({ message: 'Unauthorized: Email header does not match user data!' });
   }
-  const { editedRow } = req.body;
 
+  // Validate request body for required fields
   if (!editedRow || !editedRow.ID) {
     return res.status(400).json({ message: 'Invalid request or missing ID' });
   }
 
+  let connection;
   try {
+    connection = await pool.getConnection();
+
     // Convert the Quarter value to a number if necessary
     if (editedRow.Quarter) {
       editedRow.Quarter = parseInt(editedRow.Quarter.replace('Q', ''), 10);
@@ -141,30 +136,36 @@ router.post('/', updatedRow, async (req, res) => {
     const query = `UPDATE portfolio_companies_format SET ${setStatements.join(', ')} WHERE ID = ?`;
 
     // Execute the query
-    const [result] = await pool.query(query, values);
+    const [result] = await connection.query(query, values);
 
+    // Check if any rows were affected
     if (result.affectedRows > 0) {
-      const { ID, ...auditLogValuesWithoutID } = editedRow;
+      // Prepare audit log data
       const auditLogValues = {
-        Org_Id: Org_ID,
+        Org_ID,
         ModifiedBy: userId,
         UserAction: 'Update',
-        ...Object.entries(auditLogValuesWithoutID).reduce((acc, [key, value]) => {
+        ...Object.entries(editedRow).reduce((acc, [key, value]) => {
           const columnName = columnMap[key] || key;
           acc[columnName] = value;
           return acc;
         }, {})
       };
-      // Insert audit log
-      await pool.query('INSERT INTO portfolio_audit SET ?', auditLogValues);
 
+      // Insert audit log
+      await connection.query('INSERT INTO portfolio_audit SET ?', auditLogValues);
+
+      // Send success response
       res.status(200).json({ message: 'Row updated successfully' });
     } else {
+      // No rows were updated
       res.status(200).json({ message: 'No changes made to the row' });
     }
   } catch (error) {
     console.error('Error updating row:', error);
     res.status(500).json({ message: 'Error updating row' });
+  } finally {
+    if (connection) connection.release();
   }
 });
 

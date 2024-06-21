@@ -84,28 +84,34 @@ router.delete('/', async (req, res) => {
             return res.status(400).json({ error: 'Organization ID is required!' });
         }
 
-        // Check if there are users associated with the organization
-        const userResult = await pool.query('SELECT COUNT(*) AS userCount FROM users WHERE Org_ID = ?', [org_ID]);
-        const userCount = userResult[0][0].userCount;
+        // Get a connection from the pool
+        const connection = await pool.getConnection();
 
-        if (userCount > 0 ) {
-            return res.status(300).json({ error: 'Cannot delete organization as it is associated with users' });
-        }else{ 
+        try {
+            // Check if there are users associated with the organization
+            const [userResult] = await connection.query('SELECT COUNT(*) AS userCount FROM users WHERE Org_ID = ?', [org_ID]);
+            const userCount = userResult[0].userCount;
 
-             const result = await pool.query('DELETE FROM organization WHERE org_ID = ?', [org_ID]);
-       
-        // Check if any rows were affected
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Organization not found!' });
+            if (userCount > 0) {
+                return res.status(400).json({ error: 'Cannot delete organization as it is associated with users' });
+            }
+
+            // Delete the organization
+            const [result] = await connection.query('DELETE FROM organization WHERE org_ID = ?', [org_ID]);
+
+            // Check if any rows were affected
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: 'Organization not found!' });
+            }
+
+            // Send success response
+            return res.status(200).json({ message: 'Organization deleted successfully' });
+        } finally {
+            // Release the connection back to the pool
+            connection.release();
         }
-
-        // Send success response
-        return res.status(200).json({ message: 'Organization deleted successfully' });
-    }
     } catch (error) {
         console.error("Error deleting organization:", error);
-        
-        // Handle other errors
         return res.status(500).json({ error: 'Error deleting organization' });
     }
 });

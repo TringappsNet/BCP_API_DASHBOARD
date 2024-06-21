@@ -4,7 +4,7 @@
  *   get:
  *     tags: ['Portfolio']
  *     summary: Retrieve all organization names
- *     description: Retrieves a list of all organization names along with their IDs.
+ *     description: Retrieves a list of all organization names along with their IDs and user counts.
  *     responses:
  *       '200':
  *         description: A list of organization names and their IDs
@@ -21,6 +21,9 @@
  *                   org_name:
  *                     type: string
  *                     description: The name of the organization.
+ *                   user_count:
+ *                     type: integer
+ *                     description: The count of users associated with the organization.
  *       '500':
  *         description: Internal server error
  *         content:
@@ -39,9 +42,12 @@ const pool = require('./pool');
 
 // GET endpoint to retrieve all organization names
 router.get('/', async (req, res) => {
+    let connection;
     try {
+        connection = await pool.getConnection();
+
         // Query the database to retrieve all organization names
-        const [rows] = await pool.query('SELECT o.org_ID, o.org_name, COUNT(u.UserID) AS user_count FROM organization o LEFT JOIN users u ON o.org_ID = u.Org_ID GROUP BY o.org_ID, o.org_name');
+        const [rows] = await connection.query('SELECT o.org_ID, o.org_name, COUNT(u.UserID) AS user_count FROM organization o LEFT JOIN users u ON o.org_ID = u.Org_ID GROUP BY o.org_ID, o.org_name');
 
         // Send back the array of organization names
         res.status(200).json(rows);
@@ -49,6 +55,8 @@ router.get('/', async (req, res) => {
         // If an error occurs, send a 500 Internal Server Error response
         console.error('Error retrieving organization names:', error);
         res.status(500).json({ error: 'Error retrieving organization names' });
+    } finally {
+        if (connection) connection.release();
     }
 });
 

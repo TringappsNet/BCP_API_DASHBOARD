@@ -103,13 +103,12 @@ const bodyParser = require('body-parser');
  *                   description: Error message
  */
 
-
 router.post('/', bodyParser.json(), async (req, res) => {
   const { token, firstName, lastName, phoneNo, password } = req.body;
 
   if (!token || !firstName || !lastName || !phoneNo || !password) {
     return res.status(400).json({ errors: {
-        token: 'token is required',
+        token: 'Token is required',
         firstName: 'First name is required',
         lastName: 'Last name is required',
         phoneNo: 'Phone number is required',  
@@ -122,27 +121,36 @@ router.post('/', bodyParser.json(), async (req, res) => {
   }
 
   try {
-    // Generate salt
     const salt = await bcrypt.genSalt();
-    // Generate password hash with the generated salt
     const passwordHash = await bcrypt.hash(password, salt);
-    // Check if the user exists
-    const selectUserQuery = 'SELECT * FROM users WHERE InviteToken = ?';
-    const [userRows] = await pool.query(selectUserQuery, [token]);
-    
-    if (userRows.length === 0) {
-      return res.status(404).json({ errors: { token: 'User not found' } });
-    }
 
-    // Call the stored procedure to update or insert user data, including the salt
-    await pool.query('CALL RegisterUser(?, ?, ?, ?, ?, ?)', [token, firstName, lastName, phoneNo, passwordHash, salt]);
+    pool.query('SELECT * FROM users WHERE InviteToken = ?', [token], (error, results) => {
+      if (error) {
+        console.error("Error executing query:", error);
+        return res.status(500).json({ message: 'Error querying database' });
+      }
+      
+      if (results.length === 0) {
+        return res.status(404).json({ errors: { token: 'User not found' } });
+      }
 
-    // Remove the token from the database
-    await pool.query('UPDATE users SET InviteToken = NULL, isActive = 1 WHERE InviteToken = ?', [token]);
+      pool.query('CALL RegisterUser(?, ?, ?, ?, ?, ?)', [token, firstName, lastName, phoneNo, passwordHash, salt], (error) => {
+        if (error) {
+          console.error("Error executing stored procedure:", error);
+          return res.status(500).json({ message: 'Error executing stored procedure' });
+        }
 
-    console.log("User registered or updated successfully!");
-   
-    res.status(201).json({ message: 'User registered or updated successfully' });
+        pool.query('UPDATE users SET InviteToken = NULL, isActive = 1 WHERE InviteToken = ?', [token], (error) => {
+          if (error) {
+            console.error("Error updating user:", error);
+            return res.status(500).json({ message: 'Error updating user' });
+          }
+
+          console.log("User registered or updated successfully!");
+          res.status(201).json({ message: 'User registered or updated successfully' });
+        });
+      });
+    });
   } catch (error) {
     console.error("Error registering or updating user:", error);
     res.status(500).json({ message: 'Error registering or updating user' });

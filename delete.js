@@ -88,17 +88,13 @@ const { columnMap } = require('./Objects');
 router.post('/', async (req, res) => {
   const sessionId = req.header('Session-ID');
   const emailHeader = req.header('Email');
-  const email = req.header('Email'); 
-  
-  if (!sessionId || !emailHeader || !email) {
+
+  if (!sessionId || !emailHeader) {
     return res.status(400).json({ message: 'Session ID and Email headers are required!' });
   }
-  
+
   // You may want to validate sessionId against your session data in the database
-  
-  if (email !== emailHeader) {
-    return res.status(401).json({ message: 'Unauthorized: Email header does not match user data!' });
-  }
+
   const { ids, Org_Id, userId } = req.body;
 
   if (!Array.isArray(ids) || !ids.every(id => typeof id === 'string')) {
@@ -107,12 +103,12 @@ router.post('/', async (req, res) => {
 
   try {
     const connection = await pool.getConnection();
-    await connection.beginTransaction();
+    try {
+      await connection.beginTransaction();
 
-    const deletePromises = ids.map(async id => {
-      try {
+      const deletePromises = ids.map(async id => {
         const [deletedRow] = await connection.query('SELECT * FROM portfolio_companies_format WHERE id = ?', [id]);
-        
+
         if (!deletedRow || !deletedRow.length) {
           return;
         }
@@ -122,31 +118,32 @@ router.post('/', async (req, res) => {
 
         const { ID, UserName, Role_ID, Org_ID, UserID, ...modifiedDeletedRow } = deletedRow[0];
         const auditLogValues = {
-            Org_Id: Org_Id,
-            ModifiedBy: userId,
-            UserAction: 'Delete',
-            ...Object.entries(modifiedDeletedRow).reduce((acc, [key, value]) => {
-                const columnName = columnMap[key] || key;
-                acc[columnName] = value;
-                return acc;
-            }, {})
+          Org_Id: Org_Id,
+          ModifiedBy: userId,
+          UserAction: 'Delete',
+          ...Object.entries(modifiedDeletedRow).reduce((acc, [key, value]) => {
+            const columnName = columnMap[key] || key;
+            acc[columnName] = value;
+            return acc;
+          }, {})
         };
 
         // Insert audit log
         await connection.query('INSERT INTO portfolio_audit SET ?', auditLogValues);
-      } catch (error) {
-        console.error('Error deleting row:', error);
-        // You can choose to throw the error or handle it according to your application's requirements
-      }
-    });
+      });
 
-    await Promise.all(deletePromises);
-    await connection.commit();
-    connection.release();
-
-    res.status(200).json({ message: 'Rows deleted successfully' });
+      await Promise.all(deletePromises);
+      await connection.commit();
+      res.status(200).json({ message: 'Rows deleted successfully' });
+    } catch (error) {
+      await connection.rollback();
+      console.error('Error deleting rows:', error);
+      res.status(500).json({ message: 'Error deleting rows' });
+    } finally {
+      connection.release();
+    }
   } catch (error) {
-    console.error('Error deleting rows:', error);
+    console.error('Error getting connection from pool:', error);
     res.status(500).json({ message: 'Error deleting rows' });
   }
 });

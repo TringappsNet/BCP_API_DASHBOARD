@@ -79,18 +79,25 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    const [user] = await pool.query('SELECT * FROM users WHERE Email = ?', [email]);
-    if (!user || user.length === 0) {
-      return res.status(404).json({ message: 'Email not found' });
-    }
+    const connection = await pool.getConnection();
+    try {
+      const [user] = await connection.query('SELECT * FROM users WHERE Email = ?', [email]);
+      if (!user || user.length === 0) {
+        return res.status(404).json({ message: 'Email not found' });
+      }
 
-    if (!user || user[0].isActive === 0) {
-      return res.status(400).json({ message: 'User Inactive. Please contact the administrator for further assistance.' });
+      if (user[0].isActive === 0) {
+        return res.status(400).json({ message: 'User Inactive. Please contact the administrator for further assistance.' });
+      }
+
+      const resetToken = generateResetToken(user[0].UserID);
+      await updateResetToken(connection, resetToken, user[0].UserID);
+      await sendResetLink(email, resetToken);
+
+      return res.status(200).json({ message: 'Reset link sent successfully' });
+    } finally {
+      connection.release();
     }
-    const resetToken = generateResetToken(user[0].UserID);
-    await updateResetToken(resetToken, user[0].UserID); 
-    await sendResetLink(email, resetToken);
-    return res.status(200).json({ message: 'Reset link sent successfully' });
   } catch (err) {
     console.error('Error executing SQL query:', err);
     return res.status(500).json({ message: 'Internal server error' });
@@ -105,9 +112,9 @@ function generateResetToken(userId) {
   return hashedToken;
 }
 
-async function updateResetToken(resetToken, userId) {
+async function updateResetToken(connection, resetToken, userId) {
   try {
-    await pool.query('UPDATE users SET resetToken = ? WHERE UserID = ?', [resetToken, userId]);
+    await connection.query('UPDATE users SET resetToken = ? WHERE UserID = ?', [resetToken, userId]);
   } catch (err) {
     console.error('Error updating reset token in user table:', err);
     throw err;
@@ -128,7 +135,7 @@ async function sendResetLink(email, resetToken) {
     const resetLink = `https://bcpportal.azurewebsites.net/reset-password?token=${encodeURIComponent(resetToken)}`;
 
     const mailOptions = {
-      from: 'sender@example.com',
+      from: SMTP_USER,
       to: email,
       subject: 'Reset Your Password',
       text: `To reset your password, click on the following link: ${resetLink}`

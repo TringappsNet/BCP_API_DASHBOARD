@@ -2,11 +2,13 @@ const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
 const pool = require('./pool');
+const fs = require('fs');
 const crypto = require('crypto');
 require('dotenv').config();
 
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
+
 
 /**
  * @swagger
@@ -66,39 +68,36 @@ const SMTP_PASS = process.env.SMTP_PASS;
  *                   description: Error message indicating an internal server error.
  */
 
-
-
-
 router.post('/', async (req, res) => {
   const { email, role, organization } = req.body;
   const userName = extractUserName(email);
   
   try {
     // Check if email already exists in the users table
-    const existingUser = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-    if (existingUser[0].length > 0) {
+    const existingUser = await queryAsync('SELECT * FROM users WHERE email = ?', [email]);
+    if (existingUser.length > 0) {
       return res.status(300).json({ message: 'User already exists' });
     }
 
     // Get organization ID from the organization table
-    const orgResult = await pool.query('SELECT org_ID FROM organization WHERE org_name = ?', [organization]);
+    const orgResult = await queryAsync('SELECT org_ID FROM organization WHERE org_name = ?', [organization]);
     if (orgResult.length === 0) {
       return res.status(400).json({ message: 'Organization not found' });
     }
-    const orgID = orgResult[0][0].org_ID;
+    const orgID = orgResult[0].org_ID;
 
     // Get role ID from the role table
-    const roleResult = await pool.query('SELECT role_ID FROM role WHERE role = ?', [role]);
+    const roleResult = await queryAsync('SELECT role_ID FROM role WHERE role = ?', [role]);
     if (roleResult.length === 0) {
       return res.status(400).json({ message: 'Role not found' });
     }
-    const roleID = roleResult[0][0].role_ID;
+    const roleID = roleResult[0].role_ID;
 
     // Generate a unique invite token using SHA-256
     const inviteToken = generateInviteToken();
     
     // Store the invite token in the database along with organization ID and role ID
-    await pool.query('INSERT INTO users (email, UserName, Role_ID, Org_ID, isActive, InviteToken) VALUES (?, ?, ?, ?, ?, ?)', [email, userName, roleID, orgID, false, inviteToken]);
+    await queryAsync('INSERT INTO users (email, UserName, Role_ID, Org_ID, isActive, InviteToken) VALUES (?, ?, ?, ?, ?, ?)', [email, userName, roleID, orgID, false, inviteToken]);
     
     // Send invitation email with the invite token
     await sendInvitationEmail(email, inviteToken, req.headers['Session-ID'], req.headers['Email']);
@@ -111,6 +110,18 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Function to perform async queries with error handling
+function queryAsync(sql, values) {
+  return new Promise((resolve, reject) => {
+    pool.query(sql, values, (error, results) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(results);
+      }
+    });
+  });
+}
 
 // Function to extract username from email
 function extractUserName(email) {

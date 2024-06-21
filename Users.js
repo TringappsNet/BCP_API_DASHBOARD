@@ -47,7 +47,10 @@ const router = express.Router();
 const pool = require('./pool');
 
 router.get('/', async (req, res) => {
+  let connection;
   try {
+    connection = await pool.getConnection();
+
     // Query the database to retrieve user information along with organization name and role
     const query = `
     SELECT 
@@ -63,7 +66,7 @@ LEFT JOIN
 LEFT JOIN 
     role r ON u.Role_ID = r.role_ID;
     `;
-    const [rows] = await pool.query(query);
+    const [rows] = await connection.query(query);
     
     // Send back the array of user information
     res.status(200).json(rows);

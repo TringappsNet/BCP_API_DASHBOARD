@@ -6,14 +6,17 @@ const pool = require('./pool');
 router.put('/', async (req, res) => {
     const { email, isActive } = req.body;
 
+    let connection;
     try {
+        connection = await pool.getConnection();
+
         // Check if email and isActive are provided
         if (!email || isActive === undefined || isActive === null) {
             return res.status(400).json({ error: 'Email and isActive parameter are required!' });
         }
 
         // Execute SQL query to update isActive column
-        const result = await pool.query('UPDATE users SET isActive = ? WHERE Email = ?', [isActive, email]);
+        const result = await connection.query('UPDATE users SET isActive = ? WHERE Email = ?', [isActive, email]);
 
         // Check if any rows were affected
         if (result.affectedRows === 0) {

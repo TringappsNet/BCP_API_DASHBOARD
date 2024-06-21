@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const pool = require("./pool");
+const pool = require("./pool"); 
 const bodyParser = require("body-parser");
 const moment = require("moment");
 
@@ -122,7 +122,7 @@ router.post("/", bodyParser.json(), async (req, res) => {
   }
 
   const { userData, data } = req.body;
-  const { username, orgID, email, roleID, userId } = userData; 
+  const { username, orgID, email, roleID, userId } = userData;
 
   if (email !== emailHeader) {
     return res.status(401).json({
@@ -130,44 +130,45 @@ router.post("/", bodyParser.json(), async (req, res) => {
     });
   }
 
-  if (
-    !Array.isArray(data) ||
-    !data.every((item) => typeof item === "object")
-  ) {
-    return res
-      .status(400)
-      .json({ message: "Invalid JSON body format for new data" });
-  }
-
   try {
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
-     const [orgResult] = await connection.query(
+    // Fetch organization name to check permission
+    const [orgResult] = await connection.query(
       "SELECT org_name FROM organization WHERE org_ID = ?",
       [orgID]
-    );    
-    if (roleID !== '1' && data.some(item => item.CompanyName.toLowerCase().replace(/\s/g, '') !== orgResult[0].org_name.toLowerCase().trim().replace(/\s/g, ''))) {
+    );
+
+    if (
+      roleID !== 1 &&
+      data.some(
+        (item) =>
+          item.CompanyName.toLowerCase().replace(/\s/g, "") !==
+          orgResult[0].org_name.toLowerCase().trim().replace(/\s/g, "")
+      )
+    ) {
       return res.status(403).json({
-        message: "You don't have permission to upload from this Organization",
+        message:
+          "You don't have permission to upload from this Organization",
       });
     }
-    
-    
+
     const updateValues = [];
     const insertValues = [];
     const insertPromises = [];
 
     for (const newData of data) {
-      const monthYear = newData["MonthYear"].toLowerCase().replace(/\s/g, '');
-      const companyName = newData["CompanyName"].toLowerCase().replace(/\s/g, '');
-   
-      const [existingRows] = await connection.  query(
+      const monthYear = newData["MonthYear"].toLowerCase().replace(/\s/g, "");
+      const companyName = newData["CompanyName"]
+        .toLowerCase()
+        .replace(/\s/g, "");
+
+      const [existingRows] = await connection.query(
         "SELECT * FROM portfolio_companies_format WHERE MonthYear = ? AND CompanyName = ?",
         [monthYear, companyName]
-        
       );
-    
+
       if (existingRows.length > 0) {
         // Update existing row
         const updateValue = {
@@ -179,13 +180,17 @@ router.post("/", bodyParser.json(), async (req, res) => {
         const auditLogValuesUpdate = {
           Org_Id: orgID,
           ModifiedBy: userId,
-          UserAction: 'Overridden',
+          UserAction: "Overridden",
           ...Object.entries(newData).reduce((acc, [key, value]) => {
             acc[key] = value;
             return acc;
-          }, {})
+          }, {}),
         };
-        insertPromises.push(connection.query('INSERT INTO portfolio_audit SET ?', auditLogValuesUpdate));
+        insertPromises.push(
+          connection.query("INSERT INTO portfolio_audit SET ?", [
+            auditLogValuesUpdate,
+          ])
+        );
       } else {
         // Insert new row
         const insertValue = {
@@ -199,43 +204,45 @@ router.post("/", bodyParser.json(), async (req, res) => {
         const auditLogValuesInsert = {
           Org_Id: orgID,
           ModifiedBy: userId,
-          UserAction: 'Insert',
+          UserAction: "Insert",
           ...Object.entries(newData).reduce((acc, [key, value]) => {
-            // const columnName = columnMap[key] || key;
             acc[key] = value;
             return acc;
-          }, {})
+          }, {}),
         };
-        insertPromises.push(connection.query('INSERT INTO portfolio_audit SET ?', auditLogValuesInsert));
+        insertPromises.push(
+          connection.query("INSERT INTO portfolio_audit SET ?", [
+            auditLogValuesInsert,
+          ])
+        );
       }
     }
-    
 
     // Bulk update
     if (updateValues.length > 0) {
       const updateQuery =
-        "UPDATE portfolio_companies_format SET ? WHERE ID = ?"; 
+        "UPDATE portfolio_companies_format SET ? WHERE ID = ?";
       for (const updateValue of updateValues) {
         await connection.query(updateQuery, [updateValue, updateValue.ID]);
       }
     }
 
     // Bulk insert
-if (insertValues.length > 0) {
-  for (const insertValue of insertValues) {
-    const columns = Object.keys(insertValue);
-    const placeholders = columns.map(() => "?").join(", ");
-    const values = columns.map((col) => insertValue[col]);
-    const insertQuery = `INSERT INTO portfolio_companies_format (${columns.join(", ")}) VALUES (${placeholders})`;
-    await connection.query(insertQuery, values);
-  }
-}
+    if (insertValues.length > 0) {
+      for (const insertValue of insertValues) {
+        const columns = Object.keys(insertValue);
+        const placeholders = columns.map(() => "?").join(", ");
+        const values = columns.map((col) => insertValue[col]);
+        const insertQuery = `INSERT INTO portfolio_companies_format (${columns.join(
+          ", "
+        )}) VALUES (${placeholders})`;
+        await connection.query(insertQuery, values);
+      }
+    }
 
-
-    
     // Execute all insert promises
     await Promise.all(insertPromises);
-  
+
     await connection.commit();
     connection.release();
 

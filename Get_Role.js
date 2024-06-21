@@ -42,9 +42,12 @@ const pool = require('./pool');
 
 // GET endpoint to retrieve all roles
 router.get('/', async (req, res) => {
+    let connection;
     try {
+        connection = await pool.getConnection();
+
         // Query the database to retrieve all roles
-        const [rows] = await pool.query('SELECT * FROM role');
+        const [rows] = await connection.query('SELECT * FROM role');
 
         // Send back the array of roles
         res.status(200).json(rows);
@@ -52,6 +55,8 @@ router.get('/', async (req, res) => {
         // If an error occurs, send a 500 Internal Server Error response
         console.error('Error retrieving roles:', error);
         res.status(500).json({ error: 'Error retrieving roles' });
+    } finally {
+        if (connection) connection.release();
     }
 });
 

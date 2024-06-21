@@ -96,8 +96,12 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ message: 'Session ID and Email headers are required!' });
   }
 
+  let connection;
+
   try {
     const { email, Role } = req.body;
+    connection = await pool.getConnection();
+
 
     // if (email !== emailHeader) {
     //   return res.status(401).json({ message: 'Unauthorized: Email header does not match user data!' });
@@ -113,7 +117,7 @@ router.post('/', async (req, res) => {
     // const org_ID = orgResult.length > 0 ? orgResult[0].org_ID : null;
 
     // Query role table to get role_ID
-    const [roleResult] = await pool.query('SELECT role_ID FROM role WHERE role = ?', [Role]);
+    const [roleResult] = await connection.query('SELECT role_ID FROM role WHERE role = ?', [Role]);
     const role_ID = roleResult.length > 0 ? roleResult[0].role_ID : null;
 
     // Check if organization and role exist
@@ -122,7 +126,7 @@ router.post('/', async (req, res) => {
     }
 
     // Execute the SQL query to update user role and organization
-    const result = await pool.query('UPDATE users SET Role_ID = ? WHERE Email = ?', [role_ID, email]);
+    const result = await connection.query('UPDATE users SET Role_ID = ? WHERE Email = ?', [role_ID, email]);
 
     // Check if the update was successful
     if (result[0].affectedRows === 1) {
