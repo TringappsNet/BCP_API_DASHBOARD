@@ -25,8 +25,12 @@ const port = 3001;
 // app.use(cors(corsOptions));
 
 
-app.use(bodyParser.json());
+// limit for JSON payloads
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ limit: '100mb', extended: true }));
+
 app.use(cors({ origin: '*' }));
+
 app.use(session({
   secret: 'bcp_dashboard',
   resave: false,
