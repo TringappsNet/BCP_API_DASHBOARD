@@ -131,13 +131,17 @@ async function sendInvitationEmail(email, inviteToken, sessionId, userEmail) {
     });
 
     // Construct invitation email with the invite token in the link
-    const inviteLink = `http://18.219.123.60/register?token=${encodeURIComponent(inviteToken)}`;
-    //const inviteLink = `http://192.168.1.50:3000/register?token=${encodeURIComponent(inviteToken)}`;
+    const inviteLink = `https://bcpportal.azurewebsites.net/register?token=${encodeURIComponent(inviteToken)}`;
     const mailOptions = {
-      from: 'sender@example.com',
       to: email,
-      subject: 'Invitation to join our platform',
-      text: `Hi there! You've been invited to join our platform. Your invitation link is: ${inviteLink}`,
+      subject: 'Exclusive Invitation to Join Our Platform',
+      html: `<p>Dear ${extractUserName(email)},</p>
+             <p>We are to inviting you to join our exclusive platform.</p>
+             <p>Please use the following link to complete your registration:</p>
+             <p><a href="${inviteLink}">${inviteLink}</a></p>
+             <hr>
+             <p>This email and any attachments are confidential and may contain privileged information. If you are not the intended recipient, please notify the sender immediately and delete this email. Unauthorized use or dissemination of this communication is prohibited.</p>
+             <p>Note: This is an automated email, please do not reply directly to this message.</p>`,
       headers: {
         'Session-ID': sessionId,
         'Email': userEmail
