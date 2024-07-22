@@ -159,8 +159,8 @@ router.post("/", bodyParser.json(), async (req, res) => {
     const insertPromises = [];
 
     for (const newData of data) {
-      const monthYear = newData["MonthYear"].toLowerCase().replace(/\s/g, '');
-      const companyName = newData["CompanyName"].toLowerCase().replace(/\s/g, '');
+      const monthYear = newData["MonthYear"];
+      const companyName = newData["CompanyName"];
    
       const [existingRows] = await connection.  query(
         "SELECT * FROM portfolio_companies_format WHERE MonthYear = ? AND CompanyName = ?",
