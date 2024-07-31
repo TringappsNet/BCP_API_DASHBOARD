@@ -66,29 +66,35 @@ const SMTP_PASS = process.env.SMTP_PASS;
  *                   description: Error message indicating an internal server error.
  */
 
-
-
-
 router.post('/', async (req, res) => {
   const { email, role, organization } = req.body;
   const userName = extractUserName(email);
-  
+
   try {
     // Check if email already exists in the users table
-    const existingUser = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+    const existingUser = await pool.query(
+      'SELECT * FROM users WHERE email = ?',
+      [email]
+    );
     if (existingUser[0].length > 0) {
       return res.status(300).json({ message: 'User already exists' });
     }
 
     // Get organization ID from the organization table
-    const orgResult = await pool.query('SELECT org_ID FROM organization WHERE org_name = ?', [organization]);
+    const orgResult = await pool.query(
+      'SELECT org_ID FROM organization WHERE org_name = ?',
+      [organization]
+    );
     if (orgResult.length === 0) {
       return res.status(400).json({ message: 'Organization not found' });
     }
     const orgID = orgResult[0][0].org_ID;
 
     // Get role ID from the role table
-    const roleResult = await pool.query('SELECT role_ID FROM role WHERE role = ?', [role]);
+    const roleResult = await pool.query(
+      'SELECT role_ID FROM role WHERE role = ?',
+      [role]
+    );
     if (roleResult.length === 0) {
       return res.status(400).json({ message: 'Role not found' });
     }
@@ -96,13 +102,21 @@ router.post('/', async (req, res) => {
 
     // Generate a unique invite token using SHA-256
     const inviteToken = generateInviteToken();
-    
+
     // Store the invite token in the database along with organization ID and role ID
-    await pool.query('INSERT INTO users (email, UserName, Role_ID, Org_ID, isActive, InviteToken) VALUES (?, ?, ?, ?, ?, ?)', [email, userName, roleID, orgID, false, inviteToken]);
-    
+    await pool.query(
+      'INSERT INTO users (email, UserName, Role_ID, Org_ID, isActive, InviteToken) VALUES (?, ?, ?, ?, ?, ?)',
+      [email, userName, roleID, orgID, false, inviteToken]
+    );
+
     // Send invitation email with the invite token
-    await sendInvitationEmail(email, inviteToken, req.headers['Session-ID'], req.headers['Email']);
-    
+    await sendInvitationEmail(
+      email,
+      inviteToken,
+      req.headers['Session-ID'],
+      req.headers['Email']
+    );
+
     // Return success response
     return res.status(200).json({ message: 'Invitation sent successfully' });
   } catch (error) {
@@ -110,7 +124,6 @@ router.post('/', async (req, res) => {
     return res.status(500).json({ message: 'Enter a valid Email' });
   }
 });
-
 
 // Function to extract username from email
 function extractUserName(email) {
@@ -126,8 +139,8 @@ async function sendInvitationEmail(email, inviteToken, sessionId, userEmail) {
       secure: false,
       auth: {
         user: SMTP_USER,
-        pass: SMTP_PASS
-      }
+        pass: SMTP_PASS,
+      },
     });
 
     // Construct invitation email with the invite token in the link
@@ -144,8 +157,8 @@ async function sendInvitationEmail(email, inviteToken, sessionId, userEmail) {
              <p>Note: This is an automated email, please do not reply directly to this message.</p>`,
       headers: {
         'Session-ID': sessionId,
-        'Email': userEmail
-      }
+        Email: userEmail,
+      },
     };
 
     // Send invitation email

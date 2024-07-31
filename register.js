@@ -54,7 +54,7 @@ const bodyParser = require('body-parser');
  * @swagger
  * /register:
  *   post:
- *     tags: 
+ *     tags:
  *       - 'Portfolio'
  *     summary: Register or update user
  *     description: Registers or updates a user with the provided information.
@@ -103,22 +103,27 @@ const bodyParser = require('body-parser');
  *                   description: Error message
  */
 
-
 router.post('/', bodyParser.json(), async (req, res) => {
   const { token, firstName, lastName, phoneNo, password } = req.body;
 
   if (!token || !firstName || !lastName || !phoneNo || !password) {
-    return res.status(400).json({ errors: {
+    return res.status(400).json({
+      errors: {
         token: 'token is required',
         firstName: 'First name is required',
         lastName: 'Last name is required',
-        phoneNo: 'Phone number is required',  
-        password: 'Password is required'
-      }});
+        phoneNo: 'Phone number is required',
+        password: 'Password is required',
+      },
+    });
   }
 
   if (password.length < 6) {
-    return res.status(400).json({ errors: { password: 'Password must be at least 6 characters long' } });
+    return res
+      .status(400)
+      .json({
+        errors: { password: 'Password must be at least 6 characters long' },
+      });
   }
 
   try {
@@ -129,22 +134,32 @@ router.post('/', bodyParser.json(), async (req, res) => {
     // Check if the user exists
     const selectUserQuery = 'SELECT * FROM users WHERE InviteToken = ?';
     const [userRows] = await pool.query(selectUserQuery, [token]);
-    
+
     if (userRows.length === 0) {
       return res.status(404).json({ errors: { token: 'User not found' } });
     }
 
     // Call the stored procedure to update or insert user data, including the salt
-    await pool.query('CALL RegisterUser(?, ?, ?, ?, ?, ?)', [token, firstName, lastName, phoneNo, passwordHash, salt]);
+    await pool.query('CALL RegisterUser(?, ?, ?, ?, ?, ?)', [
+      token,
+      firstName,
+      lastName,
+      phoneNo,
+      passwordHash,
+      salt,
+    ]);
 
     // Remove the token from the database
-    await pool.query('UPDATE users SET InviteToken = NULL, isActive = 1 WHERE InviteToken = ?', [token]);
+    await pool.query(
+      'UPDATE users SET InviteToken = NULL, isActive = 1 WHERE InviteToken = ?',
+      [token]
+    );
 
-    console.log("User registered or updated successfully!");
-   
+    console.log('User registered or updated successfully!');
+
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
-    console.error("Error registering or updating user:", error);
+    console.error('Error registering or updating user:', error);
     res.status(500).json({ message: 'Error registering or updating user' });
   }
 });
