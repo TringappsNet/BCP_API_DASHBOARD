@@ -156,84 +156,71 @@ router.post("/", bodyParser.json(), async (req, res) => {
     
     const updateValues = [];
     const insertValues = [];
-    const insertPromises = [];
+    const auditLogValues = [];
+
+    // Prepare all queries
+    const selectQuery = "SELECT ID FROM portfolio_companies_format WHERE MonthYear = ? AND CompanyName = ?";
+    const updateQuery = "UPDATE portfolio_companies_format SET ? WHERE ID = ?";
+    const insertQuery = "INSERT INTO portfolio_companies_format SET ?";
+    const auditQuery = "INSERT INTO portfolio_audit SET ?";
+
+    // Prepare statements
+    const selectStmt = await connection.prepare(selectQuery);
+    const updateStmt = await connection.prepare(updateQuery);
+    const insertStmt = await connection.prepare(insertQuery);
+    const auditStmt = await connection.prepare(auditQuery);
 
     for (const newData of data) {
-      const monthYear = newData["MonthYear"];
-      const companyName = newData["CompanyName"];
-   
-      const [existingRows] = await connection.  query(
-        "SELECT * FROM portfolio_companies_format WHERE MonthYear = ? AND CompanyName = ?",
-        [monthYear, companyName]
-        
-      );
-    
+      const { MonthYear: monthYear, CompanyName: companyName } = newData;
+      
+      const [existingRows] = await selectStmt.execute([monthYear, companyName]);
+      
       if (existingRows.length > 0) {
         // Update existing row
-        const updateValue = {
-          ...newData,
-          ID: existingRows[0].ID,
-        };
-        updateValues.push(updateValue);
-
-        const auditLogValuesUpdate = {
+        updateValues.push({ ...newData, ID: existingRows[0].ID });
+        
+        auditLogValues.push({
           Org_Id: orgID,
           ModifiedBy: userId,
           UserAction: 'Overridden',
-          ...Object.entries(newData).reduce((acc, [key, value]) => {
-            acc[key] = value;
-            return acc;
-          }, {})
-        };
-        insertPromises.push(connection.query('INSERT INTO portfolio_audit SET ?', auditLogValuesUpdate));
+          ...newData
+        });
       } else {
         // Insert new row
-        const insertValue = {
+        insertValues.push({
           Org_ID: orgID,
           UserName: username,
-          ...newData,
-        };
-        insertValues.push(insertValue);
-
-        const auditLogValuesInsert = {
+          ...newData
+        });
+        
+        auditLogValues.push({
           Org_Id: orgID,
           ModifiedBy: userId,
           UserAction: 'Insert',
-          ...Object.entries(newData).reduce((acc, [key, value]) => {
-            // const columnName = columnMap[key] || key;
-            acc[key] = value;
-            return acc;
-          }, {})
-        };
-        insertPromises.push(connection.query('INSERT INTO portfolio_audit SET ?', auditLogValuesInsert));
-      }
-    }
-    
-
-    // Bulk update
-    if (updateValues.length > 0) {
-      const updateQuery =
-        "UPDATE portfolio_companies_format SET ? WHERE ID = ?"; 
-      for (const updateValue of updateValues) {
-        await connection.query(updateQuery, [updateValue, updateValue.ID]);
+          ...newData
+        });
       }
     }
 
-    // Bulk insert
-if (insertValues.length > 0) {
-  for (const insertValue of insertValues) {
-    const columns = Object.keys(insertValue);
-    const placeholders = columns.map(() => "?").join(", ");
-    const values = columns.map((col) => insertValue[col]);
-    const insertQuery = `INSERT INTO portfolio_companies_format (${columns.join(", ")}) VALUES (${placeholders})`;
-    await connection.query(insertQuery, values);
-  }
-}
+  // Bulk operations
+  await Promise.all([
+    ...updateValues.map(value => updateStmt.execute([value, value.ID])),
+    ...insertValues.map(value => insertStmt.execute([value])),
+    ...auditLogValues.map(value => auditStmt.execute([value]))
+  ]);
+
+  // Close prepared statements
+  await Promise.all([
+    selectStmt.close(),
+    updateStmt.close(),
+    insertStmt.close(),
+    auditStmt.close()
+  ]);
 
 
     
     // Execute all insert promises
-    await Promise.all(insertPromises);
+    // await Promise.all(insertPromises);
   
     await connection.commit();
     connection.release();
