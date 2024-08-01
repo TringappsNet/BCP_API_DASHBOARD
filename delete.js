@@ -88,20 +88,26 @@ const { columnMap } = require('./Objects');
 router.post('/', async (req, res) => {
   const sessionId = req.header('Session-ID');
   const emailHeader = req.header('Email');
-  const email = req.header('Email'); 
-  
+  const email = req.header('Email');
+
   if (!sessionId || !emailHeader || !email) {
-    return res.status(400).json({ message: 'Session ID and Email headers are required!' });
+    return res
+      .status(400)
+      .json({ message: 'Session ID and Email headers are required!' });
   }
-  
+
   // You may want to validate sessionId against your session data in the database
-  
+
   if (email !== emailHeader) {
-    return res.status(401).json({ message: 'Unauthorized: Email header does not match user data!' });
+    return res
+      .status(401)
+      .json({
+        message: 'Unauthorized: Email header does not match user data!',
+      });
   }
   const { ids, Org_Id, userId } = req.body;
 
-  if (!Array.isArray(ids) || !ids.every(id => typeof id === 'string')) {
+  if (!Array.isArray(ids) || !ids.every((id) => typeof id === 'string')) {
     return res.status(400).json({ message: 'Invalid JSON body format' });
   }
 
@@ -109,10 +115,13 @@ router.post('/', async (req, res) => {
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
-    const deletePromises = ids.map(async id => {
+    const deletePromises = ids.map(async (id) => {
       try {
-        const [deletedRow] = await connection.query('SELECT * FROM portfolio_companies_format WHERE id = ?', [id]);
-        
+        const [deletedRow] = await connection.query(
+          'SELECT * FROM portfolio_companies_format WHERE id = ?',
+          [id]
+        );
+
         if (!deletedRow || !deletedRow.length) {
           return;
         }
@@ -120,20 +129,24 @@ router.post('/', async (req, res) => {
         const query = 'DELETE FROM portfolio_companies_format WHERE id = ?';
         await connection.query(query, [id]);
 
-        const { ID, UserName, Role_ID, Org_ID, UserID, ...modifiedDeletedRow } = deletedRow[0];
+        const { ID, UserName, Role_ID, Org_ID, UserID, ...modifiedDeletedRow } =
+          deletedRow[0];
         const auditLogValues = {
-            Org_Id: Org_Id,
-            ModifiedBy: userId,
-            UserAction: 'Delete',
-            ...Object.entries(modifiedDeletedRow).reduce((acc, [key, value]) => {
-                const columnName = columnMap[key] || key;
-                acc[columnName] = value;
-                return acc;
-            }, {})
+          Org_Id: Org_Id,
+          ModifiedBy: userId,
+          UserAction: 'Delete',
+          ...Object.entries(modifiedDeletedRow).reduce((acc, [key, value]) => {
+            const columnName = columnMap[key] || key;
+            acc[columnName] = value;
+            return acc;
+          }, {}),
         };
 
         // Insert audit log
-        await connection.query('INSERT INTO portfolio_audit SET ?', auditLogValues);
+        await connection.query(
+          'INSERT INTO portfolio_audit SET ?',
+          auditLogValues
+        );
       } catch (error) {
         console.error('Error deleting row:', error);
         // You can choose to throw the error or handle it according to your application's requirements

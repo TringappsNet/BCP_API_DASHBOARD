@@ -55,11 +55,17 @@ router.get('/', async (req, res) => {
   try {
     const { username, organization } = req.query;
 
-    const organization_name = organization.toLowerCase().trim().replace(/\s/g, '');
+    const organization_name = organization
+      .toLowerCase()
+      .trim()
+      .replace(/\s/g, '');
     // Call the stored procedure GetPortfolioData
-    const [result] = await pool.query('CALL GetPortfolioData(?, ?)', [username, organization_name]);
-    const rows = result[0]; 
-    const data = rows.map(row => {
+    const [result] = await pool.query('CALL GetPortfolioData(?, ?)', [
+      username,
+      organization_name,
+    ]);
+    const rows = result[0];
+    const data = rows.map((row) => {
       return row;
     });
     res.status(200).json(data);

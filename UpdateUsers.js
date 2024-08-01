@@ -91,9 +91,11 @@ const pool = require('./pool');
 router.post('/', async (req, res) => {
   const sessionId = req.header('Session-ID');
   const emailHeader = req.header('Email');
-  
+
   if (!sessionId || !emailHeader) {
-    return res.status(400).json({ message: 'Session ID and Email headers are required!' });
+    return res
+      .status(400)
+      .json({ message: 'Session ID and Email headers are required!' });
   }
 
   try {
@@ -102,10 +104,15 @@ router.post('/', async (req, res) => {
     // if (email !== emailHeader) {
     //   return res.status(401).json({ message: 'Unauthorized: Email header does not match user data!' });
     // }
-    
+
     // Check if email, role, and organization are provided
     if (!email || !Role) {
-      return res.status(400).json({ error: 'Email, Role, and Organization are required in the request body' });
+      return res
+        .status(400)
+        .json({
+          error:
+            'Email, Role, and Organization are required in the request body',
+        });
     }
 
     // // Query organization table to get org_ID
@@ -113,7 +120,10 @@ router.post('/', async (req, res) => {
     // const org_ID = orgResult.length > 0 ? orgResult[0].org_ID : null;
 
     // Query role table to get role_ID
-    const [roleResult] = await pool.query('SELECT role_ID FROM role WHERE role = ?', [Role]);
+    const [roleResult] = await pool.query(
+      'SELECT role_ID FROM role WHERE role = ?',
+      [Role]
+    );
     const role_ID = roleResult.length > 0 ? roleResult[0].role_ID : null;
 
     // Check if organization and role exist
@@ -122,13 +132,20 @@ router.post('/', async (req, res) => {
     }
 
     // Execute the SQL query to update user role and organization
-    const result = await pool.query('UPDATE users SET Role_ID = ? WHERE Email = ?', [role_ID, email]);
+    const result = await pool.query(
+      'UPDATE users SET Role_ID = ? WHERE Email = ?',
+      [role_ID, email]
+    );
 
     // Check if the update was successful
     if (result[0].affectedRows === 1) {
-      return res.status(200).json({ message: 'User role updated successfully' });
+      return res
+        .status(200)
+        .json({ message: 'User role updated successfully' });
     } else {
-      return res.status(500).json({ error: 'Failed to update user role and organization' });
+      return res
+        .status(500)
+        .json({ error: 'Failed to update user role and organization' });
     }
   } catch (error) {
     console.error('Error updating user role :', error);
