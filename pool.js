@@ -9,7 +9,8 @@ const config = {
   port: 3306,
   ssl: {
     rejectUnauthorized: true,
-    ca: fs.readFileSync('./certs/certificate1.pem')  }
+    ca: fs.readFileSync('./certs/certificate1.pem'),
+  },
 };
 
 module.exports = mysql.createPool(config);

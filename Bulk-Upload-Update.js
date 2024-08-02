@@ -1,8 +1,8 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const pool = require("./pool");
-const bodyParser = require("body-parser");
-const moment = require("moment");
+const pool = require('./pool');
+const bodyParser = require('body-parser');
+const moment = require('moment');
 
 /**
  * @swagger
@@ -111,124 +111,328 @@ const moment = require("moment");
  *                   description: Error message indicating an internal server error or unsupported Excel format.
  */
 
-router.post("/", bodyParser.json(), async (req, res) => {
-  const sessionId = req.header("Session-ID");
-  const emailHeader = req.header("Email");
+router.post('/', bodyParser.json(), async (req, res) => {
+  const sessionId = req.header('Session-ID');
+  const emailHeader = req.header('Email');
 
   if (!sessionId || !emailHeader) {
     return res
       .status(400)
-      .json({ message: "Session ID and Email headers are required!" });
+      .json({ message: 'Session ID and Email headers are required!' });
   }
 
   const { userData, data } = req.body;
-  const { username, orgID, email, roleID, userId } = userData; 
+  const { username, orgID, email, roleID, userId } = userData;
 
   if (email !== emailHeader) {
     return res.status(401).json({
-      message: "Unauthorized: Email header does not match user data!",
+      message: 'Unauthorized: Email header does not match user data!',
     });
   }
 
-  if (
-    !Array.isArray(data) ||
-    !data.every((item) => typeof item === "object")
-  ) {
+  if (!Array.isArray(data) || !data.every((item) => typeof item === 'object')) {
     return res
       .status(400)
-      .json({ message: "Invalid JSON body format for new data" });
+      .json({ message: 'Invalid JSON body format for new data' });
   }
 
   try {
+    const startTime = new Date();
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
-     const [orgResult] = await connection.query(
-      "SELECT org_name FROM organization WHERE org_ID = ?",
+    const [orgResult] = await connection.query(
+      'SELECT org_name FROM organization WHERE org_ID = ?',
       [orgID]
-    );    
-    if (roleID !== '1' && data.some(item => item.CompanyName.toLowerCase().replace(/\s/g, '') !== orgResult[0].org_name.toLowerCase().trim().replace(/\s/g, ''))) {
+    );
+    // console.log(data);
+    if (
+      roleID !== '1' &&
+      data.some(
+        (item) =>
+          item.CompanyName.toLowerCase().replace(/\s/g, '') !==
+          orgResult[0].org_name.toLowerCase().trim().replace(/\s/g, '')
+      )
+    ) {
       return res.status(403).json({
         message: "You don't have permission to upload from this Organization",
       });
     }
-    
-    
+    function lowercaseKeys(obj) {
+      if (Array.isArray(obj)) {
+        return obj.map((v) => lowercaseKeys(v));
+      } else if (obj != null && obj.constructor === Object) {
+        return Object.keys(obj).reduce((result, key) => {
+          result[key.toLowerCase()] = lowercaseKeys(obj[key]);
+          return result;
+        }, {});
+      }
+      return obj;
+    }
     const updateValues = [];
     const insertValues = [];
-    const auditLogValues = [];
+    const insertPromises = [];
+    console.log('data', data.slice(0, 5));
+    selectstmt = `SELECT ID, Org_ID, UserName, MonthYear,
+      CompanyName,
+      RevenueActual,
+      RevenueBudget,
+      GrossProfitActual,
+      GrossProfitBudget,
+      SGAActual,
+      SGABudget,
+      EBITDAActual,
+      EBITDABudget,
+      CapExActual,
+      CapExBudget,
+      FixedAssetsNetActual,
+      FixedAssetsNetBudget,
+      CashActual,
+      CashBudget,
+      TotalDebtActual,
+      TotalDebtBudget,
+      AccountsReceivableActual,
+      AccountsReceivableBudget,
+      AccountsPayableActual,
+      AccountsPayableBudget,
+      InventoryActual,
+      InventoryBudget,
+      EmployeesActual,
+      EmployeesBudget FROM bcp.portfolio_companies_format;`;
+    const [existingRows] = await connection.query(
+      selectstmt
+      // [monthYear, companyName]
+    );
+    const objectsAreDifferent = (obj1, obj2, excludeKeys) => {
+      const keys1 = Object.keys(obj1).filter(
+        (key) => !excludeKeys.includes(key)
+      );
+      const keys2 = Object.keys(obj2).filter(
+        (key) => !excludeKeys.includes(key)
+      );
 
-    // Prepare all queries
-    const selectQuery = "SELECT ID FROM portfolio_companies_format WHERE MonthYear = ? AND CompanyName = ?";
-    const updateQuery = "UPDATE portfolio_companies_format SET ? WHERE ID = ?";
-    const insertQuery = "INSERT INTO portfolio_companies_format SET ?";
-    const auditQuery = "INSERT INTO portfolio_audit SET ?";
+      if (keys1.length !== keys2.length) return true;
 
-    // Prepare statements
-    const selectStmt = await connection.prepare(selectQuery);
-    const updateStmt = await connection.prepare(updateQuery);
-    const insertStmt = await connection.prepare(insertQuery);
-    const auditStmt = await connection.prepare(auditQuery);
+      for (let key of keys1) {
+        // console.log(key)
+        if (obj1[key] !== obj2[key]) {
+          // console.log(obj1[key], obj2[key]);
+          return true;
+        }
+      }
 
+      return false;
+    };
+
+    // console.log('DbData', existingRows.slice(0, 5));
+    // console.log(existingRows[0].MonthYear);
+    // console.log(existingRows[0].MonthYear.toLocaleDateString());
+    // console.log(new Date(data[0].MonthYear).toLocaleDateString());
     for (const newData of data) {
-      const { MonthYear: monthYear, CompanyName: companyName } = newData;
-      
-      const [existingRows] = await selectStmt.execute([monthYear, companyName]);
-      
-      if (existingRows.length > 0) {
+      const monthYear = new Date(newData['MonthYear']).toLocaleDateString();
+      const companyName = newData['CompanyName'];
+      const existingRow = existingRows.filter(
+        (row) =>
+          row.MonthYear.toLocaleDateString() === monthYear &&
+          row.CompanyName === companyName
+      );
+
+      if (existingRow.length > 0) {
         // Update existing row
-        updateValues.push({ ...newData, ID: existingRows[0].ID });
-        
-        auditLogValues.push({
-          Org_Id: orgID,
-          ModifiedBy: userId,
-          UserAction: 'Overridden',
-          ...newData
-        });
+        const excludeColumns = [
+          'ID',
+          'Org_ID',
+          'UserName',
+          'MonthYear',
+          'CompanyName',
+        ];
+        // console.log('existingRow', existingRow);
+        // console.log('existingRow[0]', existingRow[0]);
+        if (objectsAreDifferent(existingRow[0], newData, excludeColumns)) {
+          const updateValue = {
+            ...newData,
+            ID: existingRow[0].ID,
+            UserName: existingRow[0].UserName,
+          };
+          updateValues.push(updateValue);
+          const auditLogValuesUpdate = {
+            Org_Id: orgID,
+            ModifiedBy: userId,
+            UserAction: 'Overridden',
+            ...Object.entries(newData).reduce((acc, [key, value]) => {
+              acc[key] = value;
+              return acc;
+            }, {}),
+          };
+          insertPromises.push(
+            connection.query(
+              'INSERT INTO portfolio_audit SET ?',
+              auditLogValuesUpdate
+            )
+          );
+        }
       } else {
         // Insert new row
-        insertValues.push({
+        const insertValue = {
           Org_ID: orgID,
           UserName: username,
-          ...newData
-        });
-        
-        auditLogValues.push({
+          ...newData,
+        };
+        insertValues.push(insertValue);
+        const auditLogValuesInsert = {
           Org_Id: orgID,
           ModifiedBy: userId,
           UserAction: 'Insert',
-          ...newData
-        });
+          ...Object.entries(newData).reduce((acc, [key, value]) => {
+            // const columnName = columnMap[key] || key;
+            acc[key] = value;
+            return acc;
+          }, {}),
+        };
+        insertPromises.push(
+          connection.query(
+            'INSERT INTO portfolio_audit SET ?',
+            auditLogValuesInsert
+          )
+        );
       }
+      // console.log('newData', newData);
+    }
+    console.log('updateValues', updateValues.length);
+    console.log('insertValues', insertValues.length);
+    // for (const newData of data) {
+    //   const monthYear = newData['MonthYear'];
+    //   const companyName = newData['CompanyName'];
+
+    // const [existingRows] = await connection.query(
+    //   'SELECT * FROM portfolio_companies_format WHERE MonthYear = ? AND CompanyName = ?',
+    //   [monthYear, companyName]
+    // );
+
+    //   if (existingRows.length > 0) {
+    //     // Update existing row
+    //     const updateValue = {
+    //       ...newData,
+    //       ID: existingRows[0].ID,
+    //     };
+    //     updateValues.push(updateValue);
+
+    //     const auditLogValuesUpdate = {
+    //       Org_Id: orgID,
+    //       ModifiedBy: userId,
+    //       UserAction: 'Overridden',
+    //       ...Object.entries(newData).reduce((acc, [key, value]) => {
+    //         acc[key] = value;
+    //         return acc;
+    //       }, {}),
+    //     };
+    //     insertPromises.push(
+    //       connection.query(
+    //         'INSERT INTO portfolio_audit SET ?',
+    //         auditLogValuesUpdate
+    //       )
+    //     );
+    //   } else {
+    //     // Insert new row
+    //     const insertValue = {
+    //       Org_ID: orgID,
+    //       UserName: username,
+    //       ...newData,
+    //     };
+    //     insertValues.push(insertValue);
+
+    //     const auditLogValuesInsert = {
+    //       Org_Id: orgID,
+    //       ModifiedBy: userId,
+    //       UserAction: 'Insert',
+    //       ...Object.entries(newData).reduce((acc, [key, value]) => {
+    //         // const columnName = columnMap[key] || key;
+    //         acc[key] = value;
+    //         return acc;
+    //       }, {}),
+    //     };
+    //     insertPromises.push(
+    //       connection.query(
+    //         'INSERT INTO portfolio_audit SET ?',
+    //         auditLogValuesInsert
+    //       )
+    //     );
+    //   }
+    // }
+
+    // Bulk update
+    if (updateValues.length > 0) {
+      // Get all column names except 'ID'
+      const columns = Object.keys(updateValues[0]).filter(
+        (col) => col !== 'ID'
+      );
+
+      // Construct the query
+      let query = `INSERT INTO portfolio_companies_format (ID, ${columns.join(
+        ', '
+      )}) VALUES `;
+
+      // Create placeholders for all rows
+      const placeholders = updateValues
+        .map(() => `(${['?', ...columns.map(() => '?')].join(', ')})`)
+        .join(', ');
+
+      query += placeholders;
+
+      // Add ON DUPLICATE KEY UPDATE clause
+      query +=
+        ' ON DUPLICATE KEY UPDATE ' +
+        columns.map((col) => `${col} = VALUES(${col})`).join(', ');
+
+      // Flatten all values into a single array
+      const values = updateValues.flatMap((obj) => [
+        obj.ID,
+        ...columns.map((col) => obj[col]),
+      ]);
+      // console.log(query)
+      // console.log(values)
+      const [result] = await connection.query(query, values);
+      console.log(`Updated ${result.affectedRows} rows`);
     }
 
-  // Bulk operations
-  await Promise.all([
-    ...updateValues.map(value => updateStmt.execute([value, value.ID])),
-    ...insertValues.map(value => insertStmt.execute([value])),
-    ...auditLogValues.map(value => auditStmt.execute([value]))
-  ]);
+    // Bulk insert
+    if (insertValues.length > 0) {
+      // Get column names from the first object
+      const columns = Object.keys(insertValues[0]);
 
-  // Close prepared statements
-  await Promise.all([
-    selectStmt.close(),
-    updateStmt.close(),
-    insertStmt.close(),
-    auditStmt.close()
-  ]);
+      // Create the base query
+      let query = `INSERT INTO portfolio_companies_format (${columns.join(
+        ', '
+      )}) VALUES `;
 
+      // Create placeholders for all rows
+      const placeholders = insertValues
+        .map(() => `(${columns.map(() => '?').join(', ')})`)
+        .join(', ');
 
-    
+      query += placeholders;
+
+      // Flatten all values into a single array
+      const values = insertValues.flatMap((obj) =>
+        columns.map((col) => obj[col])
+      );
+      const [result] = await connection.query(query, values);
+      console.log(`Inserted ${result.affectedRows} rows`);
+    }
+
     // Execute all insert promises
-    // await Promise.all(insertPromises);
-  
+    await Promise.all(insertPromises);
+    const endTime = new Date();
+    const diffInMs = endTime - startTime;
+    const diffInMinutes = diffInMs / 60000;
+    console.log('Duration: ', diffInMinutes);
     await connection.commit();
     connection.release();
 
-    res.status(200).json({ message: "Data uploaded successfully" });
+    res.status(200).json({ message: 'Data uploaded successfully' });
   } catch (error) {
-    console.error("Error inserting/updating data:", error);
-    res.status(500).json({ message: "Try Upload later" });
+    console.error('Error inserting/updating data:', error);
+    res.status(500).json({ message: 'Try Upload later' });
   }
 });
 

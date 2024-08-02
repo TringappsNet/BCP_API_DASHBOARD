@@ -18,7 +18,7 @@ app.use(bodyParser.json());
  *         email:
  *           type: string
  *           format: email
- *           description: User's Email Address   
+ *           description: User's Email Address
  *         password:
  *           type: string
  *           description: User's Password
@@ -85,7 +85,7 @@ app.use(bodyParser.json());
  * @swagger
  * /login:
  *   post:
- *     tags: 
+ *     tags:
  *       - 'Portfolio'
  *     summary: User Login
  *     description: Logs in a user with the provided email and password.
@@ -135,82 +135,102 @@ app.use(bodyParser.json());
  */
 
 router.post('/', async (req, res) => {
-    const { email, password } = req.body;
-  
-    try {
-        // Check if email and password are provided
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Email and password are required!' });
-        }
+  const { email, password } = req.body;
 
-        // Validate email format
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({ error: 'Please enter a valid email address!' });
-        }
+  try {
+    // Check if email and password are provided
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ error: 'Email and password are required!' });
+    }
 
-        // Retrieve user information from the database including organization name
-        const [rows] = await pool.query(`
+    // Validate email format
+    if (!emailRegex.test(email)) {
+      return res
+        .status(400)
+        .json({ error: 'Please enter a valid email address!' });
+    }
+
+    // Retrieve user information from the database including organization name
+    const [rows] = await pool.query(
+      `
             SELECT u.*, o.org_name AS OrganizationName, r.role AS roleName
             FROM users u
             LEFT JOIN organization o ON u.Org_ID = o.org_ID
             LEFT JOIN role r ON u.Role_ID = r.role_ID
-            WHERE Email = ?`, [email]);
-        
-        // Check if the user exists
-        if (rows.length > 0) {
-            const user = rows[0];
-            const isValidPassword = await bcrypt.compare(password, user.PasswordHash);
-            const isActive = user.isActive;
+            WHERE Email = ?`,
+      [email]
+    );
 
-            if(isActive === 0){
-                return res.status(400).json({ error: 'User Inactive. Please contact the administrator for further assistance.' });
-            }
-            
-            if (isValidPassword) {
-                // Generate session details
-                const sessionId = req.sessionID;
-                const role = user.roleName;
-                const userId = user.UserID;
-                const UserName = user.UserName;
-                const Organization = user.OrganizationName;
-                const Role_ID = user.Role_ID; 
-                const Org_ID = user.Org_ID;
-                const createdAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
-                const expiration = new Date(Date.now() + 10 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
-                await pool.query('UPDATE users SET CurrentSessionID = ?, LastLoginTime = ? WHERE Email = ?', [sessionId, createdAt, email]);
+    // Check if the user exists
+    if (rows.length > 0) {
+      const user = rows[0];
+      const isValidPassword = await bcrypt.compare(password, user.PasswordHash);
+      const isActive = user.isActive;
 
-                // Set session cookie
-                res.cookie('sessionId', sessionId, {
-                    httpOnly: true,
-                    secure: false,
-                    maxAge: 10 * 60 * 1000
-                });
+      if (isActive === 0) {
+        return res
+          .status(400)
+          .json({
+            error:
+              'User Inactive. Please contact the administrator for further assistance.',
+          });
+      }
 
-                
-                // Respond with user information and session details
-                return res.status(200).json({
-                    message: 'Logged In',
-                    UserName: UserName,
-                    userId: userId,
-                    email: email,
-                    sessionId: sessionId,
-                    Organization: Organization,
-                    Role_ID: Role_ID,
-                    Org_ID:Org_ID,
-                    role:role
-                });
-            } else {
-                // Invalid password
-                return res.status(401).json({ error: 'Invalid Credentials!' });
-            }
-        } else {
-            // User not found
-            return res.status(400).json({ error: 'Invalid Credentials!' });
-        }
-    } catch (error) {
-        console.error("Error logging in user:", error);
-        return res.status(500).json({ error: 'User Not Registered!' });
+      if (isValidPassword) {
+        // Generate session details
+        const sessionId = req.sessionID;
+        const role = user.roleName;
+        const userId = user.UserID;
+        const UserName = user.UserName;
+        const Organization = user.OrganizationName;
+        const Role_ID = user.Role_ID;
+        const Org_ID = user.Org_ID;
+        const createdAt = new Date()
+          .toISOString()
+          .slice(0, 19)
+          .replace('T', ' ');
+        const expiration = new Date(Date.now() + 10 * 60 * 1000)
+          .toISOString()
+          .slice(0, 19)
+          .replace('T', ' ');
+        await pool.query(
+          'UPDATE users SET CurrentSessionID = ?, LastLoginTime = ? WHERE Email = ?',
+          [sessionId, createdAt, email]
+        );
+
+        // Set session cookie
+        res.cookie('sessionId', sessionId, {
+          httpOnly: true,
+          secure: false,
+          maxAge: 10 * 60 * 1000,
+        });
+
+        // Respond with user information and session details
+        return res.status(200).json({
+          message: 'Logged In',
+          UserName: UserName,
+          userId: userId,
+          email: email,
+          sessionId: sessionId,
+          Organization: Organization,
+          Role_ID: Role_ID,
+          Org_ID: Org_ID,
+          role: role,
+        });
+      } else {
+        // Invalid password
+        return res.status(401).json({ error: 'Invalid Credentials!' });
+      }
+    } else {
+      // User not found
+      return res.status(400).json({ error: 'Invalid Credentials!' });
     }
+  } catch (error) {
+    console.error('Error logging in user:', error);
+    return res.status(500).json({ error: 'User Not Registered!' });
+  }
 });
 
 module.exports = router;

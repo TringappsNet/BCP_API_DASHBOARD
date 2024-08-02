@@ -39,17 +39,19 @@ const pool = require('./pool');
 
 // GET endpoint to retrieve all organization names
 router.get('/', async (req, res) => {
-    try {
-        // Query the database to retrieve all organization names
-        const [rows] = await pool.query('SELECT o.org_ID, o.org_name, COUNT(u.UserID) AS user_count FROM organization o LEFT JOIN users u ON o.org_ID = u.Org_ID GROUP BY o.org_ID, o.org_name');
+  try {
+    // Query the database to retrieve all organization names
+    const [rows] = await pool.query(
+      'SELECT o.org_ID, o.org_name, COUNT(u.UserID) AS user_count FROM organization o LEFT JOIN users u ON o.org_ID = u.Org_ID GROUP BY o.org_ID, o.org_name'
+    );
 
-        // Send back the array of organization names
-        res.status(200).json(rows);
-    } catch (error) {
-        // If an error occurs, send a 500 Internal Server Error response
-        console.error('Error retrieving organization names:', error);
-        res.status(500).json({ error: 'Error retrieving organization names' });
-    }
+    // Send back the array of organization names
+    res.status(200).json(rows);
+  } catch (error) {
+    // If an error occurs, send a 500 Internal Server Error response
+    console.error('Error retrieving organization names:', error);
+    res.status(500).json({ error: 'Error retrieving organization names' });
+  }
 });
 
 module.exports = router;

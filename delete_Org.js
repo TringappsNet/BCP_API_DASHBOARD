@@ -76,38 +76,49 @@ const router = express.Router();
 const pool = require('./pool');
 
 router.delete('/', async (req, res) => {
-    const { org_ID } = req.body;
+  const { org_ID } = req.body;
 
-    try {
-        // Check if org_ID is provided
-        if (!org_ID) {
-            return res.status(400).json({ error: 'Organization ID is required!' });
-        }
-
-        // Check if there are users associated with the organization
-        const userResult = await pool.query('SELECT COUNT(*) AS userCount FROM users WHERE Org_ID = ?', [org_ID]);
-        const userCount = userResult[0][0].userCount;
-
-        if (userCount > 0 ) {
-            return res.status(300).json({ error: 'Cannot delete organization as it is associated with users' });
-        }else{ 
-
-             const result = await pool.query('DELETE FROM organization WHERE org_ID = ?', [org_ID]);
-       
-        // Check if any rows were affected
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Organization not found!' });
-        }
-
-        // Send success response
-        return res.status(200).json({ message: 'Organization deleted successfully' });
+  try {
+    // Check if org_ID is provided
+    if (!org_ID) {
+      return res.status(400).json({ error: 'Organization ID is required!' });
     }
-    } catch (error) {
-        console.error("Error deleting organization:", error);
-        
-        // Handle other errors
-        return res.status(500).json({ error: 'Error deleting organization' });
+
+    // Check if there are users associated with the organization
+    const userResult = await pool.query(
+      'SELECT COUNT(*) AS userCount FROM users WHERE Org_ID = ?',
+      [org_ID]
+    );
+    const userCount = userResult[0][0].userCount;
+
+    if (userCount > 0) {
+      return res
+        .status(300)
+        .json({
+          error: 'Cannot delete organization as it is associated with users',
+        });
+    } else {
+      const result = await pool.query(
+        'DELETE FROM organization WHERE org_ID = ?',
+        [org_ID]
+      );
+
+      // Check if any rows were affected
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Organization not found!' });
+      }
+
+      // Send success response
+      return res
+        .status(200)
+        .json({ message: 'Organization deleted successfully' });
     }
+  } catch (error) {
+    console.error('Error deleting organization:', error);
+
+    // Handle other errors
+    return res.status(500).json({ error: 'Error deleting organization' });
+  }
 });
 
 module.exports = router;

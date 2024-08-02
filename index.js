@@ -24,19 +24,20 @@ const port = 3001;
 
 // app.use(cors(corsOptions));
 
-
 // limit for JSON payloads
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
 app.use(cors({ origin: '*' }));
 
-app.use(session({
-  secret: 'bcp_dashboard',
-  resave: false,
-  saveUninitialized: true,
-  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } 
-}));
+app.use(
+  session({
+    secret: 'bcp_dashboard',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 },
+  })
+);
 
 const forgotPasswordRouter = require('./forgot-password');
 const sendInviteRouter = require('./send-invite');
@@ -70,7 +71,6 @@ app.use('/api/update-Org', require('./update_Org'));
 app.use('/api/user-Active', require('./UserActive'));
 app.use('/api/bulk-upload-update', require('./Bulk-Upload-Update'));
 app.use('/api/Audit', require('./Audit'));
-
 
 // Start the server
 app.listen(port, () => {

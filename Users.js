@@ -64,7 +64,7 @@ LEFT JOIN
     role r ON u.Role_ID = r.role_ID;
     `;
     const [rows] = await pool.query(query);
-    
+
     // Send back the array of user information
     res.status(200).json(rows);
   } catch (error) {

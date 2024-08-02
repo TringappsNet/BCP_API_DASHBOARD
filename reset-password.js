@@ -74,21 +74,27 @@ const pool = require('./pool');
  *       - apiKey: []
  */
 router.post('/', async (req, res) => {
-
   const email = req.header('Email-ID');
   const sessionId = req.header('Session-ID');
 
   // Validate headers
   if (!email || !sessionId) {
-    return res.status(400).json({ message: 'Email-ID and Session-ID headers are required!' });
+    return res
+      .status(400)
+      .json({ message: 'Email-ID and Session-ID headers are required!' });
   }
   const { resetToken, newPassword } = req.body;
 
   try {
-    const [user] = await pool.query('SELECT * FROM users WHERE resetToken = ?', [resetToken]);
+    const [user] = await pool.query(
+      'SELECT * FROM users WHERE resetToken = ?',
+      [resetToken]
+    );
 
     if (!user || user.length === 0) {
-      return res.status(400).json({ message: 'Invalid or expired reset token' });
+      return res
+        .status(400)
+        .json({ message: 'Invalid or expired reset token' });
     }
 
     // Check if the reset token has expired
@@ -101,11 +107,13 @@ router.post('/', async (req, res) => {
     const newPasswordHash = await bcrypt.hash(newPassword, salt);
 
     // Update the user's password in the database
-    await pool.query('UPDATE users SET PasswordHash = ?, Salt = ?, resetToken = NULL, resetTokenExpiry = NULL WHERE resetToken = ?', [newPasswordHash, salt, resetToken]);
+    await pool.query(
+      'UPDATE users SET PasswordHash = ?, Salt = ?, resetToken = NULL, resetTokenExpiry = NULL WHERE resetToken = ?',
+      [newPasswordHash, salt, resetToken]
+    );
 
     // Respond with success message
     return res.status(200).json({ message: 'Password reset successfully' });
-
   } catch (error) {
     console.error('Error resetting password:', error);
     return res.status(500).json({ message: 'Error resetting password' });

@@ -95,7 +95,6 @@
  *                   description: Error message indicating an internal server error.
  */
 
-
 const express = require('express');
 const router = express.Router();
 const pool = require('./pool');
@@ -104,22 +103,28 @@ const moment = require('moment');
 const { columnMap } = require('./Objects');
 
 router.post('/', bodyParser.json(), async (req, res) => {
-  const { userData, data } = req.body; 
+  const { userData, data } = req.body;
   const { username, orgID, email, roleID, userId } = userData; // Add roleID to the destructured object
 
   // Validate headers
-  const sessionId = req.header('Session-ID'); 
+  const sessionId = req.header('Session-ID');
   const emailHeader = req.header('Email');
-  
+
   if (!sessionId || !emailHeader) {
-    return res.status(400).json({ message: 'Session ID and Email headers are required!' });
+    return res
+      .status(400)
+      .json({ message: 'Session ID and Email headers are required!' });
   }
 
   if (email !== emailHeader) {
-    return res.status(401).json({ message: 'Unauthorized: Email header does not match user data!' });
+    return res
+      .status(401)
+      .json({
+        message: 'Unauthorized: Email header does not match user data!',
+      });
   }
-  
-  if (!Array.isArray(data) || !data.every(item => typeof item === 'object')) {
+
+  if (!Array.isArray(data) || !data.every((item) => typeof item === 'object')) {
     return res.status(400).json({ message: 'Invalid JSON body format' });
   }
 
@@ -137,14 +142,29 @@ router.post('/', bodyParser.json(), async (req, res) => {
 
     const insertPromises = [];
     for (const row of data) {
+      const values = [
+        orgID,
+        username,
+        roleID,
+        ...Object.values(row).map((value) =>
+          typeof value === 'string' ? value.replace(/ /g, '') : value
+        ),
+      ];
+      const columns = [
+        'Org_ID',
+        'UserName',
+        'Role_ID',
+        ...Object.keys(row).map((key) => columnMap[key]),
+      ];
 
-    const values = [orgID, username, roleID, ...Object.values(row).map(value => typeof value === 'string' ? value.replace(/ /g, '') : value)];
-      const columns = ['Org_ID', 'UserName', 'Role_ID', ...Object.keys(row).map(key => columnMap[key])];
-    
-      const placeholders = values.map(() => '?').join(', '); 
-      const query1 = 'INSERT INTO portfolio_companies_format (' + columns.join(', ') + ') VALUES (' + placeholders + ')'; 
-      await connection.query(query1, values); 
-
+      const placeholders = values.map(() => '?').join(', ');
+      const query1 =
+        'INSERT INTO portfolio_companies_format (' +
+        columns.join(', ') +
+        ') VALUES (' +
+        placeholders +
+        ')';
+      await connection.query(query1, values);
 
       const auditLogValues = {
         Org_Id: orgID,
@@ -154,12 +174,14 @@ router.post('/', bodyParser.json(), async (req, res) => {
           const columnName = columnMap[key] || key;
           acc[columnName] = value;
           return acc;
-      }, {})
+        }, {}),
       };
-      
-    insertPromises.push(connection.query('INSERT INTO portfolio_audit SET ?', auditLogValues));
-  }
-    
+
+      insertPromises.push(
+        connection.query('INSERT INTO portfolio_audit SET ?', auditLogValues)
+      );
+    }
+
     await Promise.all(insertPromises);
     await connection.commit();
     connection.release();
