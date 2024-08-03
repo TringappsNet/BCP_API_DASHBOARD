@@ -209,40 +209,37 @@ router.post('/', bodyParser.json(), async (req, res) => {
 
       return false;
     };
-
+    const excludeColumns = [
+      'ID',
+      'Org_ID',
+      'UserName',
+      'MonthYear',
+      'CompanyName',
+    ];
     for (const newData of data) {
       const monthYear = new Date(newData['MonthYear']).toLocaleDateString();
       const companyName = newData['CompanyName'];
-      const existingRow = existingRows.filter(
+      const existingRow = existingRows.find(
         (row) =>
           row.MonthYear.toLocaleDateString() === monthYear &&
           row.CompanyName === companyName
       );
 
-      if (existingRow.length > 0) {
+      if (existingRow) {
         // Update existing row
-        const excludeColumns = [
-          'ID',
-          'Org_ID',
-          'UserName',
-          'MonthYear',
-          'CompanyName',
-        ];
-        if (objectsAreDifferent(existingRow[0], newData, excludeColumns)) {
+
+        if (objectsAreDifferent(existingRow, newData, excludeColumns)) {
           const updateValue = {
             ...newData,
-            ID: existingRow[0].ID,
-            UserName: existingRow[0].UserName,
+            ID: existingRow.ID,
+            UserName: existingRow.UserName,
           };
           updateValues.push(updateValue);
           const auditLogValuesUpdate = {
             Org_Id: orgID,
             ModifiedBy: userId,
             UserAction: 'Overridden',
-            ...Object.entries(newData).reduce((acc, [key, value]) => {
-              acc[key] = value;
-              return acc;
-            }, {}),
+            ...newData,
           };
           insertPromises.push(
             connection.query(
@@ -263,11 +260,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
           Org_Id: orgID,
           ModifiedBy: userId,
           UserAction: 'Insert',
-          ...Object.entries(newData).reduce((acc, [key, value]) => {
-            // const columnName = columnMap[key] || key;
-            acc[key] = value;
-            return acc;
-          }, {}),
+          ...newData,
         };
         insertPromises.push(
           connection.query(
@@ -278,8 +271,8 @@ router.post('/', bodyParser.json(), async (req, res) => {
       }
       // console.log('newData', newData);
     }
-    console.log('updateValues', updateValues.length);
-    console.log('insertValues', insertValues.length);
+    // console.log('updateValues', updateValues.length);
+    // console.log('insertValues', insertValues.length);
 
     // console.log(
     //   'Before insert and update Duration: ',
@@ -288,29 +281,20 @@ router.post('/', bodyParser.json(), async (req, res) => {
 
     // Bulk update
     if (updateValues.length > 0) {
-      // Get all column names except 'ID'
       const columns = Object.keys(updateValues[0]).filter(
         (col) => col !== 'ID'
       );
-
-      // Construct the query
       let query = `INSERT INTO portfolio_companies_format (ID, ${columns.join(
         ', '
       )}) VALUES `;
-
-      // Create placeholders for all rows
       const placeholders = updateValues
         .map(() => `(${['?', ...columns.map(() => '?')].join(', ')})`)
         .join(', ');
-
       query += placeholders;
-
-      // Add ON DUPLICATE KEY UPDATE clause
       query +=
-        ' ON DUPLICATE KEY UPDATE ' +
-        columns.map((col) => `${col} = VALUES(${col})`).join(', ');
+        'as new_Data ON DUPLICATE KEY UPDATE ' +
+        columns.map((col) => `${col} = new_Data.${col}`).join(', ');
 
-      // Flatten all values into a single array
       const values = updateValues.flatMap((obj) => [
         obj.ID,
         ...columns.map((col) => obj[col]),
@@ -321,22 +305,15 @@ router.post('/', bodyParser.json(), async (req, res) => {
 
     // Bulk insert
     if (insertValues.length > 0) {
-      // Get column names from the first object
       const columns = Object.keys(insertValues[0]);
-
-      // Create the base query
       let query = `INSERT INTO portfolio_companies_format (${columns.join(
         ', '
       )}) VALUES `;
-
-      // Create placeholders for all rows
       const placeholders = insertValues
         .map(() => `(${columns.map(() => '?').join(', ')})`)
         .join(', ');
-
       query += placeholders;
 
-      // Flatten all values into a single array
       const values = insertValues.flatMap((obj) =>
         columns.map((col) => obj[col])
       );
