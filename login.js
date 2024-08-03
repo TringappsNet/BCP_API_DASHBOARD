@@ -187,6 +187,8 @@ router.post('/', async (req, res) => {
         const Organization = user.OrganizationName;
         const Role_ID = user.Role_ID;
         const Org_ID = user.Org_ID;
+        const firstName = user.firstName;
+        const lastName = user.lastName
         const createdAt = new Date()
           .toISOString()
           .slice(0, 19)
@@ -218,6 +220,8 @@ router.post('/', async (req, res) => {
           Role_ID: Role_ID,
           Org_ID: Org_ID,
           role: role,
+          firstName: firstName,
+          lastName: lastName,
         });
       } else {
         // Invalid password
