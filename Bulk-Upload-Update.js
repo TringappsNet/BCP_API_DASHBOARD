@@ -161,7 +161,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
     const updateValues = [];
     const insertValues = [];
     const insertPromises = [];
-    console.log('data', data.slice(0, 5));
+    // console.log('data', data.slice(0, 5));
     selectstmt = `SELECT ID, Org_ID, UserName, MonthYear,
       CompanyName,
       RevenueActual,
