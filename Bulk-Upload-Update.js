@@ -137,7 +137,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
   }
 
   try {
-    const startTime = new Date();
+    // const startTime = new Date();
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
@@ -157,17 +157,6 @@ router.post('/', bodyParser.json(), async (req, res) => {
       return res.status(403).json({
         message: "You don't have permission to upload from this Organization",
       });
-    }
-    function lowercaseKeys(obj) {
-      if (Array.isArray(obj)) {
-        return obj.map((v) => lowercaseKeys(v));
-      } else if (obj != null && obj.constructor === Object) {
-        return Object.keys(obj).reduce((result, key) => {
-          result[key.toLowerCase()] = lowercaseKeys(obj[key]);
-          return result;
-        }, {});
-      }
-      return obj;
     }
     const updateValues = [];
     const insertValues = [];
@@ -199,10 +188,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
       InventoryBudget,
       EmployeesActual,
       EmployeesBudget FROM bcp.portfolio_companies_format;`;
-    const [existingRows] = await connection.query(
-      selectstmt
-      // [monthYear, companyName]
-    );
+    const [existingRows] = await connection.query(selectstmt);
     const objectsAreDifferent = (obj1, obj2, excludeKeys) => {
       const keys1 = Object.keys(obj1).filter(
         (key) => !excludeKeys.includes(key)
@@ -224,10 +210,6 @@ router.post('/', bodyParser.json(), async (req, res) => {
       return false;
     };
 
-    // console.log('DbData', existingRows.slice(0, 5));
-    // console.log(existingRows[0].MonthYear);
-    // console.log(existingRows[0].MonthYear.toLocaleDateString());
-    // console.log(new Date(data[0].MonthYear).toLocaleDateString());
     for (const newData of data) {
       const monthYear = new Date(newData['MonthYear']).toLocaleDateString();
       const companyName = newData['CompanyName'];
@@ -246,8 +228,6 @@ router.post('/', bodyParser.json(), async (req, res) => {
           'MonthYear',
           'CompanyName',
         ];
-        // console.log('existingRow', existingRow);
-        // console.log('existingRow[0]', existingRow[0]);
         if (objectsAreDifferent(existingRow[0], newData, excludeColumns)) {
           const updateValue = {
             ...newData,
@@ -300,65 +280,11 @@ router.post('/', bodyParser.json(), async (req, res) => {
     }
     console.log('updateValues', updateValues.length);
     console.log('insertValues', insertValues.length);
-    // for (const newData of data) {
-    //   const monthYear = newData['MonthYear'];
-    //   const companyName = newData['CompanyName'];
 
-    // const [existingRows] = await connection.query(
-    //   'SELECT * FROM portfolio_companies_format WHERE MonthYear = ? AND CompanyName = ?',
-    //   [monthYear, companyName]
+    // console.log(
+    //   'Before insert and update Duration: ',
+    //   (new Date() - startTime) / 60000
     // );
-
-    //   if (existingRows.length > 0) {
-    //     // Update existing row
-    //     const updateValue = {
-    //       ...newData,
-    //       ID: existingRows[0].ID,
-    //     };
-    //     updateValues.push(updateValue);
-
-    //     const auditLogValuesUpdate = {
-    //       Org_Id: orgID,
-    //       ModifiedBy: userId,
-    //       UserAction: 'Overridden',
-    //       ...Object.entries(newData).reduce((acc, [key, value]) => {
-    //         acc[key] = value;
-    //         return acc;
-    //       }, {}),
-    //     };
-    //     insertPromises.push(
-    //       connection.query(
-    //         'INSERT INTO portfolio_audit SET ?',
-    //         auditLogValuesUpdate
-    //       )
-    //     );
-    //   } else {
-    //     // Insert new row
-    //     const insertValue = {
-    //       Org_ID: orgID,
-    //       UserName: username,
-    //       ...newData,
-    //     };
-    //     insertValues.push(insertValue);
-
-    //     const auditLogValuesInsert = {
-    //       Org_Id: orgID,
-    //       ModifiedBy: userId,
-    //       UserAction: 'Insert',
-    //       ...Object.entries(newData).reduce((acc, [key, value]) => {
-    //         // const columnName = columnMap[key] || key;
-    //         acc[key] = value;
-    //         return acc;
-    //       }, {}),
-    //     };
-    //     insertPromises.push(
-    //       connection.query(
-    //         'INSERT INTO portfolio_audit SET ?',
-    //         auditLogValuesInsert
-    //       )
-    //     );
-    //   }
-    // }
 
     // Bulk update
     if (updateValues.length > 0) {
@@ -389,8 +315,6 @@ router.post('/', bodyParser.json(), async (req, res) => {
         obj.ID,
         ...columns.map((col) => obj[col]),
       ]);
-      // console.log(query)
-      // console.log(values)
       const [result] = await connection.query(query, values);
       console.log(`Updated ${result.affectedRows} rows`);
     }
@@ -420,12 +344,13 @@ router.post('/', bodyParser.json(), async (req, res) => {
       console.log(`Inserted ${result.affectedRows} rows`);
     }
 
+    // console.log('Duration: ', (new Date() - startTime) / 60000);
     // Execute all insert promises
     await Promise.all(insertPromises);
-    const endTime = new Date();
-    const diffInMs = endTime - startTime;
-    const diffInMinutes = diffInMs / 60000;
-    console.log('Duration: ', diffInMinutes);
+    // const endTime = new Date();
+    // const diffInMs = endTime - startTime;
+    // const diffInMinutes = diffInMs / 60000;
+    // console.log('Duration: ', diffInMinutes);
     await connection.commit();
     connection.release();
 
