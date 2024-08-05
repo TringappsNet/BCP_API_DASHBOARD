@@ -54,10 +54,9 @@ const pool = require('./pool');
 router.get('/', async (req, res) => {
   try {
     const { username, organization } = req.query;
-
     const organization_name = organization
-      .toLowerCase()
-      .trim();
+      .toLowerCase();
+      // .trim();
       // .replace(/\s/g, '');
     // Call the stored procedure GetPortfolioData
     const [result] = await pool.query('CALL GetPortfolioData(?, ?)', [

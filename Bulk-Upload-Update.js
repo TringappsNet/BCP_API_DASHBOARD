@@ -333,6 +333,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
 
     res.status(200).json({ message: 'Data uploaded successfully' });
   } catch (error) {
+    await connection.rollback();
     console.error('Error inserting/updating data:', error);
     res.status(500).json({ message: 'Try Upload later' });
   }
