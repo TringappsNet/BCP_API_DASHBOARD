@@ -239,10 +239,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
             Org_Id: orgID,
             ModifiedBy: userId,
             UserAction: 'Overridden',
-            ...Object.entries(newData).reduce((acc, [key, value]) => {
-              acc[key] = value;
-              return acc;
-            }, {}),
+            ...newData,
           };
           insertPromises.push(
             connection.query(
@@ -263,11 +260,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
           Org_Id: orgID,
           ModifiedBy: userId,
           UserAction: 'Insert',
-          ...Object.entries(newData).reduce((acc, [key, value]) => {
-            // const columnName = columnMap[key] || key;
-            acc[key] = value;
-            return acc;
-          }, {}),
+          ...newData,
         };
         insertPromises.push(
           connection.query(
