@@ -57,8 +57,8 @@ router.get('/', async (req, res) => {
 
     const organization_name = organization
       .toLowerCase()
-      .trim()
-      .replace(/\s/g, '');
+      .trim();
+      // .replace(/\s/g, '');
     // Call the stored procedure GetPortfolioData
     const [result] = await pool.query('CALL GetPortfolioData(?, ?)', [
       username,
