@@ -137,6 +137,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
   }
 
   try {
+    // const startTime = new Date();
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
@@ -144,6 +145,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
       'SELECT org_name FROM organization WHERE org_ID = ?',
       [orgID]
     );
+    // console.log(data);
     if (
       roleID !== '1' &&
       data.some(
@@ -156,43 +158,96 @@ router.post('/', bodyParser.json(), async (req, res) => {
         message: "You don't have permission to upload from this Organization",
       });
     }
-
     const updateValues = [];
     const insertValues = [];
     const insertPromises = [];
-
-    for (const newData of data) {
-      const monthYear = newData['MonthYear'];
-      const companyName = newData['CompanyName'];
-
-      const [existingRows] = await connection.query(
-        'SELECT * FROM portfolio_companies_format WHERE MonthYear = ? AND CompanyName = ?',
-        [monthYear, companyName]
+    // console.log('data', data.slice(0, 5));
+    selectstmt = `SELECT ID, Org_ID, UserName, MonthYear,
+      CompanyName,
+      RevenueActual,
+      RevenueBudget,
+      GrossProfitActual,
+      GrossProfitBudget,
+      SGAActual,
+      SGABudget,
+      EBITDAActual,
+      EBITDABudget,
+      CapExActual,
+      CapExBudget,
+      FixedAssetsNetActual,
+      FixedAssetsNetBudget,
+      CashActual,
+      CashBudget,
+      TotalDebtActual,
+      TotalDebtBudget,
+      AccountsReceivableActual,
+      AccountsReceivableBudget,
+      AccountsPayableActual,
+      AccountsPayableBudget,
+      InventoryActual,
+      InventoryBudget,
+      EmployeesActual,
+      EmployeesBudget FROM bcp.portfolio_companies_format;`;
+    const [existingRows] = await connection.query(selectstmt);
+    const objectsAreDifferent = (obj1, obj2, excludeKeys) => {
+      const keys1 = Object.keys(obj1).filter(
+        (key) => !excludeKeys.includes(key)
+      );
+      const keys2 = Object.keys(obj2).filter(
+        (key) => !excludeKeys.includes(key)
       );
 
-      if (existingRows.length > 0) {
-        // Update existing row
-        const updateValue = {
-          ...newData,
-          ID: existingRows[0].ID,
-        };
-        updateValues.push(updateValue);
+      if (keys1.length !== keys2.length) return true;
 
-        const auditLogValuesUpdate = {
-          Org_Id: orgID,
-          ModifiedBy: userId,
-          UserAction: 'Overridden',
-          ...Object.entries(newData).reduce((acc, [key, value]) => {
-            acc[key] = value;
-            return acc;
-          }, {}),
-        };
-        insertPromises.push(
-          connection.query(
-            'INSERT INTO portfolio_audit SET ?',
-            auditLogValuesUpdate
-          )
-        );
+      for (let key of keys1) {
+        // console.log(key)
+        if (obj1[key] !== obj2[key]) {
+          // console.log(obj1[key], obj2[key]);
+          return true;
+        }
+      }
+
+      return false;
+    };
+    const excludeColumns = [
+      'ID',
+      'Org_ID',
+      'UserName',
+      'MonthYear',
+      'CompanyName',
+    ];
+    for (const newData of data) {
+      const monthYear = new Date(newData['MonthYear']).toLocaleDateString();
+      const companyName = newData['CompanyName'];
+      const existingRow = existingRows.find(
+        (row) =>
+          row.MonthYear.toLocaleDateString() === monthYear &&
+          row.CompanyName === companyName
+      );
+
+      if (existingRow) {
+        // Update existing row
+
+        if (objectsAreDifferent(existingRow, newData, excludeColumns)) {
+          const updateValue = {
+            ...newData,
+            ID: existingRow.ID,
+            UserName: existingRow.UserName,
+          };
+          updateValues.push(updateValue);
+          const auditLogValuesUpdate = {
+            Org_Id: orgID,
+            ModifiedBy: userId,
+            UserAction: 'Overridden',
+            ...newData,
+          };
+          insertPromises.push(
+            connection.query(
+              'INSERT INTO portfolio_audit SET ?',
+              auditLogValuesUpdate
+            )
+          );
+        }
       } else {
         // Insert new row
         const insertValue = {
@@ -201,16 +256,11 @@ router.post('/', bodyParser.json(), async (req, res) => {
           ...newData,
         };
         insertValues.push(insertValue);
-
         const auditLogValuesInsert = {
           Org_Id: orgID,
           ModifiedBy: userId,
           UserAction: 'Insert',
-          ...Object.entries(newData).reduce((acc, [key, value]) => {
-            // const columnName = columnMap[key] || key;
-            acc[key] = value;
-            return acc;
-          }, {}),
+          ...newData,
         };
         insertPromises.push(
           connection.query(
@@ -219,38 +269,83 @@ router.post('/', bodyParser.json(), async (req, res) => {
           )
         );
       }
+      // console.log('newData', newData);
     }
+    // console.log('updateValues', updateValues.length);
+    // console.log('insertValues', insertValues.length);
+
+    // console.log(
+    //   'Before insert and update Duration: ',
+    //   (new Date() - startTime) / 60000
+    // );
 
     // Bulk update
     if (updateValues.length > 0) {
-      const updateQuery =
-        'UPDATE portfolio_companies_format SET ? WHERE ID = ?';
-      for (const updateValue of updateValues) {
-        await connection.query(updateQuery, [updateValue, updateValue.ID]);
-      }
+      const columns = Object.keys(updateValues[0]).filter(
+        (col) => col !== 'ID'
+      );
+      let query = `INSERT INTO portfolio_companies_format (ID, ${columns.join(
+        ', '
+      )}) VALUES `;
+      const placeholders = updateValues
+        .map(() => `(${['?', ...columns.map(() => '?')].join(', ')})`)
+        .join(', ');
+      query += placeholders;
+      query +=
+        'as new_Data ON DUPLICATE KEY UPDATE ' +
+        columns.map((col) => `${col} = new_Data.${col}`).join(', ');
+
+      const values = updateValues.flatMap((obj) => [
+        obj.ID,
+        ...columns.map((col) => obj[col]),
+      ]);
+      const [result] = await connection.query(query, values);
+      console.log(`Updated ${result.affectedRows} rows`);
     }
 
     // Bulk insert
     if (insertValues.length > 0) {
-      for (const insertValue of insertValues) {
-        const columns = Object.keys(insertValue);
-        const placeholders = columns.map(() => '?').join(', ');
-        const values = columns.map((col) => insertValue[col]);
-        const insertQuery = `INSERT INTO portfolio_companies_format (${columns.join(', ')}) VALUES (${placeholders})`;
-        await connection.query(insertQuery, values);
-      }
+      const columns = Object.keys(insertValues[0]);
+      let query = `INSERT INTO portfolio_companies_format (${columns.join(
+        ', '
+      )}) VALUES `;
+      const placeholders = insertValues
+        .map(() => `(${columns.map(() => '?').join(', ')})`)
+        .join(', ');
+      query += placeholders;
+
+      const values = insertValues.flatMap((obj) =>
+        columns.map((col) => obj[col])
+      );
+      const [result] = await connection.query(query, values);
+      console.log(`Inserted ${result.affectedRows} rows`);
     }
 
+    // console.log('Duration: ', (new Date() - startTime) / 60000);
     // Execute all insert promises
-      await Promise.all(insertPromises);
-
+    await Promise.all(insertPromises);
+    // const endTime = new Date();
+    // const diffInMs = endTime - startTime;
+    // const diffInMinutes = diffInMs / 60000;
+    // console.log('Duration: ', diffInMinutes);
     await connection.commit();
     connection.release();
 
     res.status(200).json({ message: 'Data uploaded successfully' });
   } catch (error) {
+    await connection.rollback();
+    if (error instanceof TypeError) {
+      console.error("Type Error occurred:", error.message);
+      res.status(500).json({ message: 'Invalid Data.' });
+    } else if (error instanceof ReferenceError) {
+      console.error("Reference Error occurred:", error.message);
+      res.status(500).json({ message: 'Something went wrong. Try Upload later' });
+    } else {
+      console.error("An unexpected error occurred:", error.message);
+      res.status(500).json({ message: 'Something went wrong. Try Upload later' });
+    }
     console.error('Error inserting/updating data:', error);
-    res.status(500).json({ message: 'Try Upload later' });
+    
   }
 });
 
