@@ -222,7 +222,7 @@ router.post('/', bodyParser.json(), async (req, res) => {
       const existingRow = existingRows.find(
         (row) =>
           row.MonthYear.toLocaleDateString() === monthYear &&
-          row.CompanyName === companyName
+          row.CompanyName.trim() === companyName.trim()
       );
 
       if (existingRow) {
@@ -335,17 +335,20 @@ router.post('/', bodyParser.json(), async (req, res) => {
   } catch (error) {
     await connection.rollback();
     if (error instanceof TypeError) {
-      console.error("Type Error occurred:", error.message);
+      console.error('Type Error occurred:', error.message);
       res.status(500).json({ message: 'Invalid Data.' });
     } else if (error instanceof ReferenceError) {
-      console.error("Reference Error occurred:", error.message);
-      res.status(500).json({ message: 'Something went wrong. Try Upload later' });
+      console.error('Reference Error occurred:', error.message);
+      res
+        .status(500)
+        .json({ message: 'Something went wrong. Try Upload later' });
     } else {
-      console.error("An unexpected error occurred:", error.message);
-      res.status(500).json({ message: 'Something went wrong. Try Upload later' });
+      console.error('An unexpected error occurred:', error.message);
+      res
+        .status(500)
+        .json({ message: 'Something went wrong. Try Upload later' });
     }
     console.error('Error inserting/updating data:', error);
-    
   }
 });
 
