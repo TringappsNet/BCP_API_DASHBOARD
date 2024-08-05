@@ -23,6 +23,14 @@ const port = 3001;
 // };
 
 // app.use(cors(corsOptions));
+// Custom error for unhandled rejections
+class UnhandledRejectionError extends Error {
+  constructor(reason) {
+    super('Unhandled Promise Rejection');
+    this.name = 'UnhandledRejectionError';
+    this.reason = reason;
+  }
+}
 
 // limit for JSON payloads
 app.use(express.json({ limit: '100mb' }));
@@ -71,6 +79,39 @@ app.use('/api/update-Org', require('./update_Org'));
 app.use('/api/user-Active', require('./UserActive'));
 app.use('/api/bulk-upload-update', require('./Bulk-Upload-Update'));
 app.use('/api/Audit', require('./Audit'));
+
+// Middleware to handle unhandled rejections during request processing
+app.use((req, res, next) => {
+  process.on('unhandledRejection', (reason) => {
+    next(new UnhandledRejectionError(reason));
+  });
+  next();
+});
+// Error handling middleware
+app.use((err, req, res, next) => {
+  // console.error(err.stack);
+  if (err instanceof UnhandledRejectionError) {
+    console.error('Unhandled Rejection Error:', err.reason);
+    return res
+      .status(500)
+      .json({ error: 'Something Went Wrong. Invalid data' });
+  }
+  // Check if the error is a MySQL promise error
+  if (err.code && err.code.startsWith('ER_')) {
+    console.error('MySQL Error:', err.message);
+    return res.status(500).json({ error: 'Database error occurred' });
+  }
+
+  // For other types of errors
+  res.status(500).json({ error: 'Something went wrong' });
+});
+
+// Catch unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // Application specific logging, throwing an error, or other logic here
+  // throw new UnhandledRejectionError(reason);
+});
 
 // Start the server
 app.listen(port, () => {
