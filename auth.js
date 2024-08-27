@@ -4,14 +4,6 @@ const bcrypt = require('bcrypt');
 const pool = require('./pool');
 const bodyParser = require('body-parser');
 
-router.get('/', (req, res) => {
-  res.send('Hello World');
-});
-
-router.get('/sample', (req, res) => {
-  res.send('sample ');
-});
-
 router.post('/register', bodyParser.json(), async (req, res) => {
   const { userName, password, email, organization, phoneNo } = req.body;
 

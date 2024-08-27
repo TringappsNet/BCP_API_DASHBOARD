@@ -137,7 +137,7 @@ async function sendResetLink(email, resetToken) {
         pass: SMTP_PASS,
       },
     });
-    const resetLink = `https://bcpportal.azurewebsites.net/reset-password?token=${encodeURIComponent(resetToken)}`;
+    const resetLink = `https://portal.benfordcapital.com/reset-password?token=${encodeURIComponent(resetToken)}`;
     const mailOptions = {
       from: 'sender@example.com',
       to: email,
