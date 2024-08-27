@@ -79,6 +79,7 @@ app.use('/api/update-Org', require('./update_Org'));
 app.use('/api/user-Active', require('./UserActive'));
 app.use('/api/bulk-upload-update', require('./Bulk-Upload-Update'));
 app.use('/api/Audit', require('./Audit'));
+app.use('/api/user-delete', require('./UserDelete'));
 
 // Middleware to handle unhandled rejections during request processing
 app.use((req, res, next) => {

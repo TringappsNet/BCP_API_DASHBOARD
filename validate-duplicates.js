@@ -99,15 +99,39 @@ router.post('/', async (req, res) => {
     // Prepare the batch query
     const queryParts = [];
     const queryValues = [];
+    const distinctCompanyNames = [
+      ...new Set(data.map((row) => row['CompanyName'])),
+    ];
     data.forEach((row, index) => {
       const monthYearValue = row['MonthYear'];
-      const [yearValue, monthValue] = monthYearValue ? monthYearValue.split('-') : [null, null];
+      const [yearValue, monthValue] = monthYearValue
+        ? monthYearValue.split('-')
+        : [null, null];
       const companyName = row['CompanyName'];
 
-      queryParts.push(`(CompanyName = ? AND YEAR(MonthYear) = ? AND MONTH(MonthYear) = ?)`);
+      queryParts.push(
+        `(CompanyName = ? AND YEAR(MonthYear) = ? AND MONTH(MonthYear) = ?)`
+      );
       queryValues.push(companyName, yearValue, monthValue);
     });
+    const [organizations] = await pool.query('SELECT * FROM organization');
+    // Check if each company name exists in the organization names
+    const companyExistence = distinctCompanyNames.map((companyName) => {
+      const exists = organizations.some((org) => org.org_name === companyName);
+      return { companyName, exists: exists ? 1 : 0 };
+    });
+    const allCompaniesFound = companyExistence.every(
+      (company) => company.exists === 1
+    );
+    if (!allCompaniesFound) {
+      const missingCompanies = companyExistence
+        .filter((company) => company.exists === 0)
+        .map((company) => company.companyName);
 
+      const missingCompaniesString = missingCompanies.join(', ');
+      const message = `Invalid Organization(s). The following need to be added: ${missingCompaniesString}`;
+      return res.status(404).json({ message: message });
+    }
     const validationQuery = `
       SELECT CompanyName, YEAR(MonthYear) as year, MONTH(MonthYear) as month, COUNT(*) as count, ANY_VALUE(id) as id
       FROM portfolio_companies_format
@@ -115,16 +139,24 @@ router.post('/', async (req, res) => {
       GROUP BY CompanyName, year, month
     `;
 
-    const [validationResults] = await connection.query(validationQuery, queryValues);
+    const [validationResults] = await connection.query(
+      validationQuery,
+      queryValues
+    );
 
     // Map the results to the original data
     const results = data.map((row) => {
       const monthYearValue = row['MonthYear'];
-      const [yearValue, monthValue] = monthYearValue ? monthYearValue.split('-') : [null, null];
+      const [yearValue, monthValue] = monthYearValue
+        ? monthYearValue.split('-')
+        : [null, null];
       const companyName = row['CompanyName'];
 
       const result = validationResults.find(
-        (res) => res.CompanyName === companyName && res.year == yearValue && res.month == monthValue
+        (res) =>
+          res.CompanyName === companyName &&
+          res.year == yearValue &&
+          res.month == monthValue
       );
 
       return {
