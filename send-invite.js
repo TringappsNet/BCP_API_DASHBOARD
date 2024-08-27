@@ -144,7 +144,7 @@ async function sendInvitationEmail(email, inviteToken, sessionId, userEmail) {
     });
 
     // Construct invitation email with the invite token in the link
-    const inviteLink = `https://bcpportal.azurewebsites.net/register?token=${encodeURIComponent(inviteToken)}`;
+    const inviteLink = `https://portal.benfordcapital.com/register?token=${encodeURIComponent(inviteToken)}`;
     const mailOptions = {
       to: email,
       subject: 'Exclusive Invitation to Join Our Platform',
