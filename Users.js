@@ -51,6 +51,7 @@ router.get('/', async (req, res) => {
     // Query the database to retrieve user information along with organization name and role
     const query = `
     SELECT 
+    u.UserID,
     u.UserName, 
     o.org_name AS Organization, 
     u.Email, 

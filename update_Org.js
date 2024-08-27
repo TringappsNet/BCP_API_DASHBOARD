@@ -85,24 +85,30 @@ router.put('/', async (req, res) => {
   try {
     // Check if org_id and new_org_name are provided
     if (!org_id || !new_org_name) {
-      return res
-        .status(400)
-        .json({
-          error: 'Organization ID and new organization name are required!',
-        });
+      return res.status(400).json({
+        error: 'Organization ID and new organization name are required!',
+      });
     }
-
+    const [organizations] = await pool.query('SELECT * FROM organization');
+    const organization = organizations.find((row)=> row.org_ID === org_id);
     // Execute SQL query to update org_name
     const result = await pool.query(
       'UPDATE organization SET org_name = ? WHERE org_ID = ?',
       [new_org_name, org_id]
     );
-
     // Check if any rows were affected
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Organization not found!' });
     }
-
+    console.log(org_id);
+    const dataResult = await pool.query(
+      'UPDATE portfolio_companies_format SET CompanyName = ? WHERE CompanyName = ?',
+      [new_org_name, organization.org_name]
+    );
+    // Check if any rows were affected
+    if (dataResult.affectedRows === 0) {
+      console.log('No organization found in the portfolio_companies_format');
+    }
     // Send success response
     return res
       .status(200)
