@@ -5,7 +5,7 @@ const session = require('express-session');
 const bcrypt = require('bcrypt');
 const pool = require('./pool');
 const app = express();
-const port = 3001;
+const port = 3006;
 
 // const allowedOrigins = [
 //   'http://18.219.123.60', 'http://localhost'
@@ -80,6 +80,7 @@ app.use('/api/user-Active', require('./UserActive'));
 app.use('/api/bulk-upload-update', require('./Bulk-Upload-Update'));
 app.use('/api/Audit', require('./Audit'));
 app.use('/api/user-delete', require('./UserDelete'));
+app.use('/api/portfolio-metrics', require('./Get-Bulk-Upload-Metrics')); 
 
 // Middleware to handle unhandled rejections during request processing
 app.use((req, res, next) => {
