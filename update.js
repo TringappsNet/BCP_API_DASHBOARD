@@ -88,6 +88,7 @@ const pool = require('./pool');
 const bodyParser = require('body-parser');
 const updatedRow = require('./middlewares/updated-row');
 const { columnMap } = require('./Objects');
+const metrics = require('./metrics-calculations');
 
 router.use(bodyParser.json());
 
@@ -97,6 +98,7 @@ router.post('/', updatedRow, async (req, res) => {
   const email = req.body.email;
   const userId = req.body.userId;
   const Org_ID = req.body.Org_ID;
+  const username = req.body.username;
 
   if (!sessionId || !emailHeader) {
     return res
@@ -107,19 +109,20 @@ router.post('/', updatedRow, async (req, res) => {
   // You may want to validate sessionId against your session data in the database
 
   if (email !== emailHeader) {
-    return res
-      .status(401)
-      .json({
-        message: 'Unauthorized: Email header does not match user data!',
-      });
+    return res.status(401).json({
+      message: 'Unauthorized: Email header does not match user data!',
+    });
   }
   const { editedRow } = req.body;
 
   if (!editedRow || !editedRow.ID) {
     return res.status(400).json({ message: 'Invalid request or missing ID' });
   }
-
+  let connection;
   try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
     // Convert the Quarter value to a number if necessary
     if (editedRow.Quarter) {
       editedRow.Quarter = parseInt(editedRow.Quarter.replace('Q', ''), 10);
@@ -141,10 +144,12 @@ router.post('/', updatedRow, async (req, res) => {
     values.push(editedRow.ID);
 
     // Construct SQL query
-    const query = `UPDATE portfolio_companies_format SET ${setStatements.join(', ')} WHERE ID = ?`;
+    const query = `UPDATE portfolio_companies_format SET ${setStatements.join(
+      ', '
+    )}, updatedBy = ${userId} WHERE ID = ?`;
 
     // Execute the query
-    const [result] = await pool.query(query, values);
+    const [result] = await connection.query(query, values);
 
     if (result.affectedRows > 0) {
       const { ID, ...auditLogValuesWithoutID } = editedRow;
@@ -161,16 +166,33 @@ router.post('/', updatedRow, async (req, res) => {
           {}
         ),
       };
+      await metrics.updateMetricsForRow(
+        connection,
+        editedRow,
+        Org_ID,
+        username
+      );
       // Insert audit log
-      await pool.query('INSERT INTO portfolio_audit SET ?', auditLogValues);
+      await connection.query(
+        'INSERT INTO portfolio_audit SET ?',
+        auditLogValues
+      );
 
       res.status(200).json({ message: 'Row updated successfully' });
     } else {
       res.status(200).json({ message: 'No changes made to the row' });
     }
+    await connection.commit();
   } catch (error) {
+    if (connection) {
+      await connection.rollback();
+    }
     console.error('Error updating row:', error);
+
     res.status(500).json({ message: 'Error updating row' });
+  }
+  finally {
+    if (connection) connection.release();
   }
 });
 
