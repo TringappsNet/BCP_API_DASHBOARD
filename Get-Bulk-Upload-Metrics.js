@@ -78,15 +78,15 @@ router.get('/', async (req, res) => {
           quarter: row.Quarter,
           lastModifiedBy: row.UserName,
           metrics: {
-            Actual: {},
-            Budget: {},
-            Prior: {}
-          }
+            1: {},
+            2: {},
+            3: {},
+          },
         };
       }
 
       // Map the metrics based on OperatingResultName
-      const metricType = row.OperatingResultName;
+      const metricType = row.OperatingResultID;
       if (metricType) {
         acc[key].metrics[metricType] = {
           revenue: parseFloat(row.Revenue) || 0,
@@ -104,7 +104,7 @@ router.get('/', async (req, res) => {
           totalDebt: parseFloat(row.TotalDebt) || 0,
           netDebt: parseFloat(row.NetDebt) || 0,
           capEx: parseFloat(row.CapEx) || 0,
-          employees: parseFloat(row.Employees) || 0
+          employees: parseFloat(row.Employees) || 0,
         };
       }
 
@@ -113,14 +113,13 @@ router.get('/', async (req, res) => {
 
     res.status(200).json({
       message: 'Data retrieved successfully',
-      data: Object.values(transformedResults)
+      data: Object.values(transformedResults),
     });
-
   } catch (error) {
     console.error('Error retrieving metrics:', error);
     res.status(500).json({
       message: 'Error retrieving metrics data',
-      error: error.message
+      error: error.message,
     });
   } finally {
     if (connection) connection.release();

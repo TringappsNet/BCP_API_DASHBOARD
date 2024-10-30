@@ -62,7 +62,6 @@ async function updateMetricsForRow(connection, data, orgID, username) {
         EmployeesActual: 0,
         MonthYear: data.MonthYear,
       };
-      console.log('priordata', priorData, data.MonthYear);
 
       await updateMetrics(
         connection,
@@ -108,7 +107,7 @@ async function calculateAndUpdateVariances(
     orgID,
     username,
     4,
-    'VarianceActual'
+    'Variance - Actual vs Prior'
   );
 
   // Variance Budget (Actual - Budget)
@@ -119,7 +118,7 @@ async function calculateAndUpdateVariances(
     orgID,
     username,
     5,
-    'VarianceBudget'
+    'Variance - Actual vs Budget'
   );
 }
 
