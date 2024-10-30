@@ -5,7 +5,7 @@ const session = require('express-session');
 const bcrypt = require('bcrypt');
 const pool = require('./pool');
 const app = express();
-const port = 3006;
+const port = 3001;
 
 // const allowedOrigins = [
 //   'http://18.219.123.60', 'http://localhost'
