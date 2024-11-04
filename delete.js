@@ -84,6 +84,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('./pool');
 const { columnMap } = require('./Objects');
+const metrics = require('./metrics-calculations');
 
 router.post('/', async (req, res) => {
   const sessionId = req.header('Session-ID');
@@ -99,11 +100,9 @@ router.post('/', async (req, res) => {
   // You may want to validate sessionId against your session data in the database
 
   if (email !== emailHeader) {
-    return res
-      .status(401)
-      .json({
-        message: 'Unauthorized: Email header does not match user data!',
-      });
+    return res.status(401).json({
+      message: 'Unauthorized: Email header does not match user data!',
+    });
   }
   const { ids, Org_Id, userId } = req.body;
 
@@ -141,7 +140,8 @@ router.post('/', async (req, res) => {
             return acc;
           }, {}),
         };
-
+        //delete metrics data 
+        await metrics.deleteMetricsForRow(connection, modifiedDeletedRow, Org_Id);
         // Insert audit log
         await connection.query(
           'INSERT INTO portfolio_audit SET ?',
